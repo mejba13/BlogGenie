@@ -1,25 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create New Post</title>
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-</head>
-<body class="font-sans antialiased bg-gray-100">
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Create New Post') }}
+        </h2>
+    </x-slot>
 
-<div class="min-h-screen">
-    <!-- Page Header -->
-    <header class="bg-white shadow">
-        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Create New Post
-            </h2>
-        </div>
-    </header>
-
-    <!-- Page Content -->
-    <main class="py-12">
+    <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
@@ -30,36 +16,33 @@
                         </div>
                     @endif
 
-                    <!-- Form -->
-                    <form action="{{ route('posts.store') }}" method="POST">
+                    <!-- Create Post Form -->
+                    <form method="POST" action="{{ route('posts.store') }}">
                         @csrf
 
-                        <!-- Title Field -->
-                        <div class="mb-4">
-                            <label for="title" class="block font-medium text-sm text-gray-700">
-                                Title
-                            </label>
-                            <input id="title" class="block mt-1 w-full" type="text" name="title" required />
+                        <!-- Title -->
+                        <div>
+                            <x-input-label for="title" :value="__('Title')" />
+                            <x-text-input id="title" class="block mt-1 w-full" type="text" name="title" :value="old('title')" required autofocus />
+                            <x-input-error :messages="$errors->get('title')" class="mt-2" />
                         </div>
 
-                        <!-- Slug Field -->
-                        <div class="mb-4">
-                            <label for="slug" class="block font-medium text-sm text-gray-700">
-                                Slug
-                            </label>
-                            <input id="slug" class="block mt-1 w-full" type="text" name="slug" required />
+                        <!-- Slug -->
+                        <div class="mt-4">
+                            <x-input-label for="slug" :value="__('Slug')" />
+                            <x-text-input id="slug" class="block mt-1 w-full" type="text" name="slug" :value="old('slug')" required />
+                            <x-input-error :messages="$errors->get('slug')" class="mt-2" />
                         </div>
 
                         <!-- Submit Button -->
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150">
-                            Generate and Save Post
-                        </button>
+                        <div class="flex items-center justify-end mt-4">
+                            <x-primary-button class="ms-4">
+                                {{ __('Create Post') }}
+                            </x-primary-button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
-    </main>
-</div>
-
-</body>
-</html>
+    </div>
+</x-app-layout>
