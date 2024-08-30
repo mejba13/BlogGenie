@@ -4,6 +4,7 @@ namespace App\Services;
 
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Exception;
 
 class OpenAIService
@@ -15,10 +16,9 @@ class OpenAIService
     {
         $this->client = new Client();
         $this->apiKey = env('OPENAI_API_KEY');
-        set_time_limit(60); // Extend the execution time to 60 seconds
     }
 
-    public function generateContent($title, $slug)
+    public function generatePostData($title)
     {
         $retryCount = 0;
         $maxRetries = 3;
@@ -36,11 +36,11 @@ class OpenAIService
                         'messages'    => [
                             [
                                 'role'    => 'system',
-                                'content' => 'You are a helpful assistant that generates detailed blog posts. Ensure the content is at least 1200 characters long.'
+                                'content' => 'You are a helpful assistant that generates detailed blog posts. Ensure the content is at least 1200 characters long and provide relevant categories and tags.'
                             ],
                             [
                                 'role'    => 'user',
-                                'content' => "Generate a detailed blog post content for the title: '$title' and slug: '$slug'. The content should be informative and relevant to the title."
+                                'content' => "Generate a detailed blog post for the title: '$title'. Include a slug, post content, categories, and tags."
                             ],
                         ],
                         'max_tokens'  => 1500,
@@ -50,25 +50,49 @@ class OpenAIService
 
                 $body = json_decode($response->getBody()->getContents(), true);
 
-                if (empty($body['choices'][0]['message']['content'])) {
-                    throw new Exception("OpenAI API returned an empty content.");
+                if (!isset($body['choices'][0]['message']['content'])) {
+                    throw new Exception("Failed to generate content.");
                 }
 
-                return $body['choices'][0]['message']['content'];
+                $content = $body['choices'][0]['message']['content'];
+                return $this->parseResponse($content, $title);
 
             } catch (Exception $e) {
                 $retryCount++;
-
-                // Log the error for debugging
                 Log::error("OpenAI API error: " . $e->getMessage());
 
                 if ($retryCount >= $maxRetries) {
-                    throw $e; // Rethrow the exception if max retries reached
+                    throw $e;
                 }
 
-                // Wait before retrying
                 sleep($delayBetweenRetries);
             }
         } while ($retryCount < $maxRetries);
+    }
+
+    private function parseResponse($response, $title)
+    {
+        $lines = explode("\n", $response);
+        $data = [
+            'title' => $title,
+            'slug' => Str::slug($title),
+            'content' => '',
+            'categories' => [],
+            'tags' => [],
+        ];
+
+        foreach ($lines as $line) {
+            if (strpos($line, 'Slug:') !== false) {
+                $data['slug'] = trim(str_replace('Slug:', '', $line));
+            } elseif (strpos($line, 'Content:') !== false) {
+                $data['content'] = trim(str_replace('Content:', '', $line));
+            } elseif (strpos($line, 'Categories:') !== false) {
+                $data['categories'] = array_map('trim', explode(',', str_replace('Categories:', '', $line)));
+            } elseif (strpos($line, 'Tags:') !== false) {
+                $data['tags'] = array_map('trim', explode(',', str_replace('Tags:', '', $line)));
+            }
+        }
+
+        return $data;
     }
 }
