@@ -19,18 +19,18 @@
                                 <h3 class="text-2xl font-bold">{{ $post->title }}</h3>
                                 <p class="text-gray-500">{{ $post->slug }}</p>
                                 <p class="mt-4">{{ $post->content }}</p>
-{{--                                <div class="mt-4">--}}
-{{--                                    <strong>Categories:</strong>--}}
-{{--                                    @foreach($post->categories as $category)--}}
-{{--                                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800">{{ $category->name }}</span>--}}
-{{--                                    @endforeach--}}
-{{--                                </div>--}}
-{{--                                <div class="mt-2">--}}
-{{--                                    <strong>Tags:</strong>--}}
-{{--                                    @foreach($post->tags as $tag)--}}
-{{--                                        <span class="bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-green-200 dark:text-green-800">{{ $tag->name }}</span>--}}
-{{--                                    @endforeach--}}
-{{--                                </div>--}}
+                                <div class="mt-4">
+                                    <strong>Categories:</strong>
+                                    @foreach($post->categories as $category)
+                                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800">{{ $category->name }}</span>
+                                    @endforeach
+                                </div>
+                                <div class="mt-2">
+                                    <strong>Tags:</strong>
+                                    @foreach($post->tags as $tag)
+                                        <span class="bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-green-200 dark:text-green-800">{{ $tag->name }}</span>
+                                    @endforeach
+                                </div>
                             </div>
                         @endforeach
                     @endif

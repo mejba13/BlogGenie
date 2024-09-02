@@ -38,8 +38,13 @@ class PostController extends Controller
         $user_id = Auth::id();
 
         try {
+            // Step 1: Generate Post Data using ChatGPT
             $postData = $this->openAIService->generatePostData($title);
 
+            // Log the generated data
+            Log::info("Generated Post Data: " . json_encode($postData));
+
+            // Step 2: Create and Save the Post
             $post = Post::create([
                 'user_id' => $user_id,
                 'title' => $postData['title'],
@@ -49,6 +54,7 @@ class PostController extends Controller
                 'published_at' => now(),
             ]);
 
+            // Step 3: Attach Categories to the Post
             foreach ($postData['categories'] as $categoryName) {
                 $category = Category::firstOrCreate([
                     'name' => $categoryName,
@@ -57,6 +63,7 @@ class PostController extends Controller
                 $post->categories()->attach($category->id);
             }
 
+            // Step 4: Attach Tags to the Post
             foreach ($postData['tags'] as $tagName) {
                 $tag = Tag::firstOrCreate([
                     'name' => $tagName,
@@ -65,6 +72,7 @@ class PostController extends Controller
                 $post->tags()->attach($tag->id);
             }
 
+            // Step 5: Add Meta Data to the Post
             PostMeta::create([
                 'post_id' => $post->id,
                 'meta_key' => 'meta_title',
@@ -90,11 +98,10 @@ class PostController extends Controller
         }
     }
 
-
     public function index()
     {
-        // Retrieve all posts from the database
-        $posts = Post::all();
+        // Retrieve all posts with their categories and tags
+        $posts = Post::with('categories', 'tags')->orderBy('published_at', 'desc')->get();
 
         // Pass the posts to the view
         return view('posts.index', compact('posts'));
