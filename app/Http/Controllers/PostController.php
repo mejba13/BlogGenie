@@ -85,7 +85,7 @@ class PostController extends Controller
                 'meta_value' => substr($postData['content'], 0, 150),
             ]);
 
-            return redirect()->route('posts.create')->with('success', 'Post generated and saved successfully!');
+            return redirect()->route('posts.index')->with('success', 'Post created successfully.');
 
         } catch (Exception $e) {
             Log::error('Failed to generate or save post: ' . $e->getMessage());
@@ -105,5 +105,16 @@ class PostController extends Controller
 
         // Pass the posts to the view
         return view('posts.index', compact('posts'));
+    }
+
+    public function show($id)
+    {
+        $post = Post::with('categories', 'tags', 'meta')->findOrFail($id);
+
+        // Extract meta title and description
+        $metaTitle = $post->meta()->where('meta_key', 'meta_title')->value('meta_value');
+        $metaDescription = $post->meta()->where('meta_key', 'meta_description')->value('meta_value');
+
+        return view('posts.show', compact('post', 'metaTitle', 'metaDescription'));
     }
 }

@@ -1,0 +1,26 @@
+/* Modern Button Styles */
+.modern-button {
+    display: inline-block;
+    width: 100%;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    color: #ffffff;
+    background: linear-gradient(90deg, #1db954 0%, #1aa34a 100%); /* Green gradient */
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.modern-button:hover {
+    background: linear-gradient(90deg, #1aa34a 0%, #1db954 100%); /* Reversed gradient on hover */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); /* Slightly larger shadow on hover */
+    transform: translateY(-2px); /* Lift the button slightly on hover */
+}
+
+.modern-button:active {
+    background: linear-gradient(90deg, #1aa34a 0%, #1db954 100%); /* Keep the hover effect */
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2); /* Slight
