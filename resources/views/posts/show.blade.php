@@ -21,7 +21,7 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="text-lg text-gray-700 font-semibold">Engr Mejba Ahmed</p> <!-- Hardcoded Author Name -->
+                            <p class="text-lg text-gray-700 font-semibold">{{ $post->user->name }}</p> <!-- Hardcoded Author Name -->
                             <p class="text-sm text-gray-500">{{ $post->created_at->format('F j, Y') }}</p>
                         </div>
                     </div>
