@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Exception;
 use Illuminate\Support\Str;
+use App\Notifications\NewPostNotification;
 
 class PostController extends Controller
 {
@@ -86,6 +87,9 @@ class PostController extends Controller
                 'meta_key' => 'meta_description',
                 'meta_value' => substr($postData['content'], 0, 150),
             ]);
+
+            // Send Discord notification
+            $post->notify(new NewPostNotification($post));
 
             return redirect()->route('posts.index')->with('success', 'Post created successfully.');
 
