@@ -35,7 +35,7 @@ class OpenAIService
                         ],
                         [
                             'role'    => 'user',
-                            'content' => "Generate a detailed blog post for the title: '$title'. Include a slug, post content, categories, and tags."
+                            'content' => "Generate a detailed blog post for the title: '$title'. Include a slug, post content, categories, tags, a featured image, and a video URL."
                         ],
                     ],
                     'max_tokens'  => 2000,
@@ -55,7 +55,13 @@ class OpenAIService
 
             // Parse the response content
             $content = $body['choices'][0]['message']['content'];
-            return $this->parseResponse($content, $title);
+            $postData = $this->parseResponse($content, $title);
+
+            // Generate featured image and video
+            $postData['featured_image_url'] = $this->generateImage($postData['content']);
+            $postData['video_url'] = $this->generateVideo($postData['content']);
+
+            return $postData;
 
         } catch (Exception $e) {
             Log::error("OpenAI API error: " . $e->getMessage());
@@ -108,5 +114,21 @@ class OpenAIService
         Log::info("Parsed data: " . json_encode($data));
 
         return $data;
+    }
+
+    private function generateImage($content)
+    {
+        // Here, implement the logic to generate an image based on the content
+        // For now, we will simulate this with a placeholder image URL.
+        $imageUrl = 'https://via.placeholder.com/800x400?text=' . urlencode(Str::limit($content, 50));
+        return $imageUrl;
+    }
+
+    private function generateVideo($content)
+    {
+        // Here, implement the logic to generate a video based on the content
+        // For now, we will simulate this with a YouTube video URL.
+        $videoUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=' . rand(0, 1000);
+        return $videoUrl;
     }
 }

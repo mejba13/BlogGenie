@@ -52,6 +52,8 @@ class PostController extends Controller
                 'content' => $postData['content'],
                 'status' => 'published',
                 'published_at' => now(),
+                'featured_image_url' => $postData['featured_image_url'],  // Save the featured image URL
+                'video_url' => $postData['video_url'],  // Save the video URL
             ]);
 
             // Step 3: Attach Categories to the Post

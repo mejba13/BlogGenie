@@ -20,7 +20,18 @@
                                 @endforeach
                             </div>
 
+                            @if($post->featured_image_url)
+                                <div class="mb-4">
+                                    <img src="{{ $post->featured_image_url }}" alt="{{ $post->title }}" class="w-full h-48 object-cover rounded-lg shadow-sm">
+                                </div>
+                            @endif
+
                             <h3 class="text-xl font-semibold mb-2">{{ $post->title }}</h3>
+
+                            <p class="text-sm text-gray-600 mb-4">
+                                By <span class="font-semibold">{{ $post->user->name }}</span>
+                            </p>
+
                             <p class="text-gray-700">
                                 {{ Str::limit(strip_tags($post->content), 250, '...') }}
                             </p>
@@ -34,7 +45,7 @@
                             </div>
 
                             <div class="mt-4 text-right">
-                                <span class="inline-block bg-indigo-600 text-black text-sm font-semibold py-2 px-4 rounded">
+                                <span class="inline-block bg-indigo-600 text-white text-sm font-semibold py-2 px-4 rounded">
                                     Read More
                                 </span>
                             </div>

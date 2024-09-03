@@ -10,18 +10,25 @@
 
     <div class="py-12 px-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class=" overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-8 px-12  border-b border-gray-200">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-8 px-12 border-b border-gray-200">
+
+                    <!-- Display the post's featured image -->
+                    @if($post->featured_image_url)
+                        <div class="mb-6">
+                            <img src="{{ $post->featured_image_url }}" alt="{{ $post->title }}" class="w-full h-auto rounded-lg shadow-md">
+                        </div>
+                    @endif
+
                     <!-- Author Info and Date -->
                     <div class="flex items-center mb-4">
-                        <!-- SVG Placeholder for Profile Picture -->
                         <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mr-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.656 0 3-1.344 3-3s-1.344-3-3-3-3 1.344-3 3 1.344 3 3 3zm0 2c-2.762 0-5 2.238-5 5h10c0-2.762-2.238-5-5-5z" />
                             </svg>
                         </div>
                         <div>
-                            <p class="text-lg text-gray-700 font-semibold">{{ $post->user->name }}</p> <!-- Hardcoded Author Name -->
+                            <p class="text-lg text-gray-700 font-semibold">{{ $post->user->name }}</p>
                             <p class="text-sm text-gray-500">{{ $post->created_at->format('F j, Y') }}</p>
                         </div>
                     </div>
