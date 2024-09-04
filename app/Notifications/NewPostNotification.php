@@ -4,13 +4,12 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\SlackMessage;
-use Illuminate\Notifications\Messages\WebhookMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Notifications\Messages\DiscordMessage;
 use App\Models\Post;
 use Illuminate\Support\Str;
 
-class NewPostNotification extends Notification
+class NewPostNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -19,7 +18,7 @@ class NewPostNotification extends Notification
     /**
      * Create a new notification instance.
      *
-     * @return void
+     * @param Post $post
      */
     public function __construct(Post $post)
     {
@@ -29,7 +28,7 @@ class NewPostNotification extends Notification
     /**
      * Get the notification's delivery channels.
      *
-     * @param  mixed  $notifiable
+     * @param mixed $notifiable
      * @return array
      */
     public function via($notifiable)
@@ -38,34 +37,22 @@ class NewPostNotification extends Notification
     }
 
     /**
-     * Get the Discord webhook representation of the notification.
+     * Get the Discord representation of the notification.
      *
-     * @param  mixed  $notifiable
-     * @return \Illuminate\Notifications\Messages\WebhookMessage
+     * @param mixed $notifiable
+     * @return \Illuminate\Notifications\Messages\DiscordMessage
      */
     public function toDiscord($notifiable)
     {
-        return (new WebhookMessage)
-            ->content('A new post has been published!')
-            ->embeds([
-                [
-                    'title' => $this->post->title,
-                    'description' => Str::limit($this->post->content, 150),
-                    'url' => route('posts.show', $this->post->id),
-                    'color' => '7506394',
-                    'fields' => [
-                        [
-                            'name' => 'Author',
-                            'value' => $this->post->user->name,
-                            'inline' => true,
-                        ],
-                        [
-                            'name' => 'Published At',
-                            'value' => $this->post->created_at->format('F j, Y'),
-                            'inline' => true,
-                        ],
-                    ],
-                ],
-            ]);
+        return (new DiscordMessage)
+            ->content('A new post has been created on the site!')
+            ->username(config('discord.username'))
+            ->embed(function ($embed) {
+                $embed->title($this->post->title)
+                    ->description(Str::limit(strip_tags($this->post->content), 200)) // Limit description to 200 characters
+                    ->url(route('posts.show', $this->post->id)) // URL to the post
+                    ->footer('New Post by ' . $this->post->user->name)
+                    ->timestamp(now());
+            });
     }
 }

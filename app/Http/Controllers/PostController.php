@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Exception;
 use Illuminate\Support\Str;
-use App\Notifications\NewPostNotification;
+use Illuminate\Support\Facades\Http;
 
 class PostController extends Controller
 {
@@ -88,10 +88,10 @@ class PostController extends Controller
                 'meta_value' => substr($postData['content'], 0, 150),
             ]);
 
-            // Send Discord notification
-            $post->notify(new NewPostNotification($post));
+            // Step 6: Send Discord Notification via Webhook
+            $this->sendDiscordNotification($post);
 
-            return redirect()->route('posts.index')->with('success', 'Post created successfully.');
+            return redirect()->route('posts.create')->with('success', 'Post created successfully.');
 
         } catch (Exception $e) {
             Log::error('Failed to generate or save post: ' . $e->getMessage());
@@ -122,5 +122,42 @@ class PostController extends Controller
         $metaDescription = $post->meta()->where('meta_key', 'meta_description')->value('meta_value');
 
         return view('posts.show', compact('post', 'metaTitle', 'metaDescription'));
+    }
+
+    protected function sendDiscordNotification($post)
+    {
+        $webhookUrl = 'https://discord.com/api/webhooks/1280371914467967049/38frsoqTuSBcM3tbG7ps-XLh7HJChL5XSzY7uJ_9edANk4zt5QqNGS3FxoHK1FegtBs3'; // Replace with your Discord Webhook URL
+
+        $data = [
+            'username' => 'BlogGenie Bot', // Display name in Discord
+            'embeds' => [
+                [
+                    'title' => $post->title,
+                    'description' => Str::limit(strip_tags($post->content), 200), // Limit description to 200 characters
+                    'url' => route('posts.show', $post->id), // URL to the post
+                    'footer' => [
+                        'text' => 'New Post by ' . $post->user->name,
+                    ],
+                    'timestamp' => now()->toIso8601String(),
+                ]
+            ],
+        ];
+
+        try {
+            // Send the POST request to Discord Webhook
+            $response = Http::post($webhookUrl, $data);
+
+            // Log success or failure
+            if ($response->successful()) {
+                Log::info('Discord notification sent successfully.');
+            } else {
+                Log::error('Failed to send Discord notification', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            }
+        } catch (Exception $e) {
+            Log::error('Error sending Discord notification: ' . $e->getMessage());
+        }
     }
 }
