@@ -3,9 +3,17 @@
 namespace App\Broadcasting;
 
 use Illuminate\Notifications\Notification;
+use GuzzleHttp\Client;
 
 class DiscordChannel
 {
+    protected $client;
+
+    public function __construct()
+    {
+        $this->client = new Client();
+    }
+
     public function send($notifiable, Notification $notification)
     {
         if (!method_exists($notification, 'toDiscord')) {
@@ -14,25 +22,14 @@ class DiscordChannel
 
         $message = $notification->toDiscord($notifiable);
 
-        // Ensure the Discord webhook URL is available in the .env file
-        $webhookUrl = config('discord.webhook_url');
+        $webhookUrl = config('services.discord.webhook_url');
 
-        if (!$webhookUrl) {
-            throw new \Exception('Discord Webhook URL is not set in the environment');
-        }
-
-        // Make the HTTP request to Discord using Guzzle HTTP Client
-        $client = new \GuzzleHttp\Client();
-        $response = $client->post($webhookUrl, [
+        $this->client->post($webhookUrl, [
             'json' => [
+                'username' => $message->username ?? config('services.discord.username', 'Laravel Bot'),
                 'content' => $message->content,
-                'username' => config('discord.username'),
-                'embeds' => $message->embeds,
+                'embeds' => $message->embeds ?? [],
             ],
         ]);
-
-        if ($response->getStatusCode() !== 204) {
-            throw new \Exception('Failed to send message to Discord. Status code: ' . $response->getStatusCode());
-        }
     }
 }

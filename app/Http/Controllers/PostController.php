@@ -6,6 +6,7 @@ use App\Models\Post;
 use App\Models\Category;
 use App\Models\Tag;
 use App\Models\PostMeta;
+use App\Notifications\NewPostNotification;
 use Illuminate\Http\Request;
 use App\Services\OpenAIService;
 use Illuminate\Support\Facades\Auth;
@@ -88,8 +89,9 @@ class PostController extends Controller
                 'meta_value' => substr($postData['content'], 0, 150),
             ]);
 
-            // Step 6: Send Discord Notification via Webhook
-            $this->sendDiscordNotification($post);
+            // Step 6: Send Notification to Discord
+            $post->notify(new NewPostNotification($post));
+
 
             return redirect()->route('posts.create')->with('success', 'Post created successfully.');
 
@@ -124,40 +126,4 @@ class PostController extends Controller
         return view('posts.show', compact('post', 'metaTitle', 'metaDescription'));
     }
 
-    protected function sendDiscordNotification($post)
-    {
-        $webhookUrl = 'https://discord.com/api/webhooks/1280371914467967049/38frsoqTuSBcM3tbG7ps-XLh7HJChL5XSzY7uJ_9edANk4zt5QqNGS3FxoHK1FegtBs3'; // Replace with your Discord Webhook URL
-
-        $data = [
-            'username' => 'BlogGenie Bot', // Display name in Discord
-            'embeds' => [
-                [
-                    'title' => $post->title,
-                    'description' => Str::limit(strip_tags($post->content), 200), // Limit description to 200 characters
-                    'url' => route('posts.show', $post->id), // URL to the post
-                    'footer' => [
-                        'text' => 'New Post by ' . $post->user->name,
-                    ],
-                    'timestamp' => now()->toIso8601String(),
-                ]
-            ],
-        ];
-
-        try {
-            // Send the POST request to Discord Webhook
-            $response = Http::post($webhookUrl, $data);
-
-            // Log success or failure
-            if ($response->successful()) {
-                Log::info('Discord notification sent successfully.');
-            } else {
-                Log::error('Failed to send Discord notification', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-            }
-        } catch (Exception $e) {
-            Log::error('Error sending Discord notification: ' . $e->getMessage());
-        }
-    }
 }

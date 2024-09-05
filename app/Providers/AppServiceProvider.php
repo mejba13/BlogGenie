@@ -3,22 +3,27 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Notifications\ChannelManager;
+use App\Broadcasting\DiscordChannel;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * Register services.
      */
-    public function register(): void
+    public function register()
     {
-        //
+        // Any other registration code you might have
     }
 
     /**
-     * Bootstrap any application services.
+     * Bootstrap services.
      */
-    public function boot(): void
+    public function boot()
     {
-        //
+        // Register custom notification driver for Discord
+        $this->app->make(ChannelManager::class)->extend('discord', function () {
+            return new DiscordChannel();
+        });
     }
 }
