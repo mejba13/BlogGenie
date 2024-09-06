@@ -38,7 +38,7 @@ class OpenAIService
                             'content' => "Generate a detailed blog post for the title: '$title'. Include a slug, post content, categories, tags, a featured image, and a video URL."
                         ],
                     ],
-                    'max_tokens'  => 2000,
+                    'max_tokens'  => 200,
                     'temperature' => 0.7,
                 ],
             ]);
