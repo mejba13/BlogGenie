@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use Exception;
 
 class OpenAIService
@@ -41,6 +43,7 @@ class OpenAIService
                     'max_tokens'  => 200,
                     'temperature' => 0.7,
                 ],
+                'timeout' => 120, // Set the timeout to 30 seconds
             ]);
 
             $body = json_decode($response->getBody()->getContents(), true);
@@ -118,17 +121,96 @@ class OpenAIService
 
     private function generateImage($content)
     {
-        // Here, implement the logic to generate an image based on the content
-        // For now, we will simulate this with a placeholder image URL.
-        $imageUrl = 'https://via.placeholder.com/800x400?text=' . urlencode(Str::limit($content, 50));
-        return $imageUrl;
+        try {
+            $response = $this->client->post('https://api.openai.com/v1/images/generations', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type'  => 'application/json',
+                ],
+                'json' => [
+                    'prompt'       => $content,
+                    'n'            => 1,
+                    'size'         => '1024x1024',
+                ],
+            ]);
+
+            $body = json_decode($response->getBody()->getContents(), true);
+
+            if (isset($body['data'][0]['url'])) {
+                $imageUrl = $body['data'][0]['url'];
+
+                // Get the image content from the URL
+                $imageContents = file_get_contents($imageUrl);
+
+                // Define the path in the storage/app/public folder
+                $imageName = 'featured_images/' . Str::random(10) . '.jpg';
+                Storage::disk('public')->put($imageName, $imageContents);
+
+                return $imageName; // Return the relative path of the saved image
+
+            } else {
+                throw new Exception('Image URL not found in OpenAI response.');
+            }
+
+        } catch (Exception $e) {
+            Log::error("Failed to generate or save the image: " . $e->getMessage());
+
+            // If image generation fails, return a placeholder image
+            return $this->generatePlaceholderImage($content);
+        }
+    }
+
+    private function generatePlaceholderImage($content)
+    {
+        // Extract a summary or keyword from the content for the placeholder text
+        $text = Str::limit(strip_tags($content), 30);
+
+        // Create a placeholder image with text using Intervention Image
+        $image = \Intervention\Image\Facades\Image::canvas(1024, 1024, '#cccccc'); // Grey background
+
+        // Add text to the placeholder image
+        $image->text($text, 512, 512, function ($font) {
+            $font->file(public_path('fonts/Roboto-Bold.ttf')); // Ensure this file is present
+            $font->size(40);
+            $font->color('#000000');
+            $font->align('center');
+            $font->valign('middle');
+        });
+
+        // Define the file name and path for the placeholder image
+        $imageName = 'featured_images/' . Str::random(10) . '_placeholder.jpg';
+
+        // Save the placeholder image in storage/app/public/featured_images
+        Storage::disk('public')->put($imageName, (string) $image->encode('jpg'));
+
+        // Return the path where the image can be accessed (via /storage/featured_images/your_image.jpg)
+        return $imageName;
     }
 
     private function generateVideo($content)
     {
-        // Here, implement the logic to generate a video based on the content
-        // For now, we will simulate this with a YouTube video URL.
-        $videoUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=' . rand(0, 1000);
-        return $videoUrl;
+        try {
+            // Generate a video based on content using a third-party service like Synthesia or any other API
+            $response = $this->client->post('https://api.synthesia.io/v1/generate-video', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . env('SYNTHESIA_API_KEY'),
+                    'Content-Type'  => 'application/json',
+                ],
+                'json' => [
+                    'script' => $content,
+                    'voice'  => 'en-US',
+                ],
+            ]);
+
+            $body = json_decode($response->getBody()->getContents(), true);
+
+            return $body['video_url'] ?? null;
+
+        } catch (Exception $e) {
+            Log::error("Failed to generate the video: " . $e->getMessage());
+
+            // If video generation fails, return a fallback video (e.g., a YouTube link)
+            return 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=819'; // Fallback video
+        }
     }
 }

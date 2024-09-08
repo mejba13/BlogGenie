@@ -13,10 +13,11 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-8 px-12 border-b border-gray-200">
 
-                    <!-- Display the post's featured image -->
+                    <!-- Display the post's featured image (fixed square ratio) -->
                     @if($post->featured_image_url)
                         <div class="mb-6">
-                            <img src="{{ $post->featured_image_url }}" alt="{{ $post->title }}" class="w-full h-auto rounded-lg shadow-md">
+                            <img src="{{ asset($post->featured_image_url) }}" alt="{{ $post->title }}"
+                                 class="w-full max-w-full h-[800px] object-cover rounded-lg shadow-sm">
                         </div>
                     @endif
 

@@ -18,4 +18,44 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+
+    # Enable Gzip Compression
+    <IfModule mod_deflate.c>
+        AddOutputFilterByType DEFLATE text/html text/xml text/css text/javascript application/javascript application/json application/xml
+    </IfModule>
+
+    # Enable Browser Caching
+    <IfModule mod_expires.c>
+        ExpiresActive On
+        ExpiresByType image/jpg "access plus 1 year"
+        ExpiresByType image/jpeg "access plus 1 year"
+        ExpiresByType image/gif "access plus 1 year"
+        ExpiresByType image/png "access plus 1 year"
+        ExpiresByType text/css "access plus 1 month"
+        ExpiresByType application/pdf "access plus 1 month"
+        ExpiresByType application/javascript "access plus 1 year"
+        ExpiresByType application/x-javascript "access plus 1 year"
+        ExpiresByType text/javascript "access plus 1 year"
+        ExpiresByType text/html "access plus 1 month"
+        ExpiresByType application/x-icon "access plus 1 year"
+    </IfModule>
+
+    # Prevent Access to Hidden Files
+    <FilesMatch "^\.">
+        Order Allow,Deny
+        Deny from all
+    </FilesMatch>
+
+    # Prevent access to sensitive files
+    <FilesMatch "(artisan|composer\.(json|lock)|\.env|\.log)$">
+        Order Allow,Deny
+        Deny from all
+    </FilesMatch>
+
+    # Increase PHP Timeout (optional)
+    <IfModule mod_php7.c>
+        php_value max_execution_time 300
+        php_value memory_limit 256M
+    </IfModule>
+
 </IfModule>

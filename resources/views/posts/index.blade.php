@@ -22,7 +22,7 @@
 
                             @if($post->featured_image_url)
                                 <div class="mb-4">
-                                    <img src="{{ $post->featured_image_url }}" alt="{{ $post->title }}" class="w-full h-48 object-cover rounded-lg shadow-sm">
+                                    <img src="{{ asset($post->featured_image_url) }}" alt="{{ $post->title }}" class="w-full h-48 object-cover rounded-lg shadow-sm">
                                 </div>
                             @endif
 
