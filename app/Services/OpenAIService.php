@@ -6,7 +6,6 @@ use GuzzleHttp\Client;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
 use Exception;
 
 class OpenAIService
@@ -43,7 +42,7 @@ class OpenAIService
                     'max_tokens'  => 200,
                     'temperature' => 0.7,
                 ],
-                'timeout' => 120, // Set the timeout to 30 seconds
+                'timeout' => 300, // Set the timeout to 30 seconds
             ]);
 
             $body = json_decode($response->getBody()->getContents(), true);
@@ -137,16 +136,21 @@ class OpenAIService
             $body = json_decode($response->getBody()->getContents(), true);
 
             if (isset($body['data'][0]['url'])) {
+
                 $imageUrl = $body['data'][0]['url'];
 
-                // Get the image content from the URL
                 $imageContents = file_get_contents($imageUrl);
 
-                // Define the path in the storage/app/public folder
                 $imageName = 'featured_images/' . Str::random(10) . '.jpg';
-                Storage::disk('public')->put($imageName, $imageContents);
 
-                return $imageName; // Return the relative path of the saved image
+                if (!File::exists(public_path('featured_images'))) {
+                    File::makeDirectory(public_path('featured_images'), 0755, true);
+                }
+
+                file_put_contents(public_path($imageName), $imageContents);
+
+                return $imageName;
+
 
             } else {
                 throw new Exception('Image URL not found in OpenAI response.');
@@ -160,32 +164,98 @@ class OpenAIService
         }
     }
 
+//    private function generatePlaceholderImage($content)
+//    {
+//        // Extract a summary or keyword from the content for the placeholder text
+//        $text = Str::limit(strip_tags($content), 30);
+//
+//        // Create a placeholder image with text using Intervention Image
+//        $image = \Intervention\Image\Facades\Image::canvas(1024, 1024, '#cccccc'); // Grey background
+//
+//        // Add text to the placeholder image
+//        $image->text($text, 512, 512, function ($font) {
+//            $font->file(public_path('fonts/Roboto-Bold.ttf')); // Ensure this file is present
+//            $font->size(40);
+//            $font->color('#000000');
+//            $font->align('center');
+//            $font->valign('middle');
+//        });
+//
+//        $imageName = 'featured_images/' . Str::random(10) . '_placeholder.jpg';
+//        if (!File::exists(public_path('featured_images'))) {
+//            File::makeDirectory(public_path('featured_images'), 0755, true);
+//        }
+//        $image->save(public_path($imageName));
+//        return $imageName;
+//    }
+
     private function generatePlaceholderImage($content)
     {
         // Extract a summary or keyword from the content for the placeholder text
-        $text = Str::limit(strip_tags($content), 30);
+        $text = Str::limit(strip_tags($content), 50);  // Increase text limit for better appearance
 
-        // Create a placeholder image with text using Intervention Image
-        $image = \Intervention\Image\Facades\Image::canvas(1024, 1024, '#cccccc'); // Grey background
+        // Create an empty 1024x1024 image with a white background
+        $width = 1024;
+        $height = 1024;
+        $image = imagecreatetruecolor($width, $height);
 
-        // Add text to the placeholder image
-        $image->text($text, 512, 512, function ($font) {
-            $font->file(public_path('fonts/Roboto-Bold.ttf')); // Ensure this file is present
-            $font->size(40);
-            $font->color('#000000');
-            $font->align('center');
-            $font->valign('middle');
-        });
+        // Set background color to white
+        $backgroundColor = imagecolorallocate($image, 255, 255, 255);
+        imagefilledrectangle($image, 0, 0, $width, $height, $backgroundColor);
+
+        // Load a background image (optional)
+        $bgImagePath = public_path('images/background.jpg'); // Ensure you have a background image here
+        if (file_exists($bgImagePath)) {
+            $background = imagecreatefromjpeg($bgImagePath);
+            imagecopyresized($image, $background, 0, 0, 0, 0, $width, $height, imagesx($background), imagesy($background));
+            imagedestroy($background);
+        }
+
+        // Set text color to black
+        $textColor = imagecolorallocate($image, 0, 0, 0);
+
+        // Define the font size and path
+        $fontPath = public_path('fonts/Roboto-Bold.ttf'); // Ensure this file is present
+        $fontSize = 40;
+
+        // Add a title to the image (larger font size for emphasis)
+        $title = 'Generated Image';
+        $titleSize = 60;
+        $bbox = imagettfbbox($titleSize, 0, $fontPath, $title);
+        $titleWidth = $bbox[2] - $bbox[0];
+        $titleX = ($width - $titleWidth) / 2;
+        $titleY = ($height / 4);  // Place title in the upper quarter
+        imagettftext($image, $titleSize, 0, $titleX, $titleY, $textColor, $fontPath, $title);
+
+        // Add text to the image (centered)
+        $bbox = imagettfbbox($fontSize, 0, $fontPath, $text);
+        $textWidth = $bbox[2] - $bbox[0];
+        $textX = ($width - $textWidth) / 2;
+        $textY = ($height / 2) + ($fontSize / 2);
+        imagettftext($image, $fontSize, 0, $textX, $textY, $textColor, $fontPath, $text);
+
+        // Optionally, add a border around the image
+        $borderColor = imagecolorallocate($image, 0, 0, 0);
+        imagerectangle($image, 0, 0, $width-1, $height-1, $borderColor);  // Adds a black border
 
         // Define the file name and path for the placeholder image
         $imageName = 'featured_images/' . Str::random(10) . '_placeholder.jpg';
+        $imagePath = public_path($imageName);
 
-        // Save the placeholder image in storage/app/public/featured_images
-        Storage::disk('public')->put($imageName, (string) $image->encode('jpg'));
+        // Ensure the directory exists
+        if (!File::exists(public_path('featured_images'))) {
+            File::makeDirectory(public_path('featured_images'), 0755, true);
+        }
 
-        // Return the path where the image can be accessed (via /storage/featured_images/your_image.jpg)
-        return $imageName;
+        // Save the image as a JPEG file
+        imagejpeg($image, $imagePath);
+
+        // Destroy the image resource to free memory
+        imagedestroy($image);
+
+        return $imageName; // Return the relative path of the saved image
     }
+
 
     private function generateVideo($content)
     {
