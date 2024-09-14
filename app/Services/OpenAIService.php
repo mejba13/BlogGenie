@@ -47,7 +47,6 @@ class OpenAIService
 
             $body = json_decode($response->getBody()->getContents(), true);
 
-            // Log the full response for debugging
             Log::info("OpenAI API response: " . json_encode($body));
 
             if (!isset($body['choices'][0]['message']['content'])) {
@@ -55,11 +54,10 @@ class OpenAIService
                 throw new Exception("Failed to generate content.");
             }
 
-            // Parse the response content
             $content = $body['choices'][0]['message']['content'];
             $postData = $this->parseResponse($content, $title);
 
-            // Generate featured image and video
+            // Generate featured image based on post content
             $postData['featured_image_url'] = $this->generateImage($postData['content']);
             $postData['video_url'] = $this->generateVideo($postData['content']);
 
@@ -91,16 +89,19 @@ class OpenAIService
                 $data['slug'] = Str::slug(trim(str_replace('Slug:', '', $line)));
             } elseif (strpos($line, 'Categories:') !== false) {
                 $categories = str_replace('Categories:', '', $line);
-                $data['categories'] = array_map('trim', explode(',', $categories));
+                $data['categories'] = array_map(function ($category) {
+                    return str_replace('*', '', trim($category));
+                }, explode(',', $categories));
             } elseif (strpos($line, 'Tags:') !== false) {
                 $tags = str_replace('Tags:', '', $line);
-                $data['tags'] = array_map('trim', explode(',', $tags));
+                $data['tags'] = array_map(function ($tag) {
+                    return str_replace('*', '', trim($tag));
+                }, explode(',', $tags));
             } elseif (strpos($line, 'Post Content:') !== false) {
                 $isContent = true;
                 continue;
             }
 
-            // Collect content after 'Post Content:' marker
             if ($isContent && !empty($line)) {
                 $data['content'] .= $line . "\n";
             }
@@ -118,6 +119,7 @@ class OpenAIService
     public function generateImage($content)
     {
         try {
+            // Use post content to generate image prompt
             $prompt = Str::limit(strip_tags($content), 1000);
 
             $response = $this->client->post('https://api.openai.com/v1/images/generations', [
@@ -126,7 +128,7 @@ class OpenAIService
                     'Content-Type'  => 'application/json',
                 ],
                 'json' => [
-                    'prompt'       => $prompt,
+                    'prompt'       => $prompt, // Use content-based prompt
                     'n'            => 1,
                     'size'         => '1024x1024',
                 ],
@@ -145,7 +147,6 @@ class OpenAIService
                 }
                 File::put(public_path($imageName), $imageContents);
 
-                $this->addTextToImage(public_path($imageName), $content);
                 return $imageName;
 
             } else {
@@ -155,28 +156,6 @@ class OpenAIService
         } catch (Exception $e) {
             Log::error("Failed to generate image: " . $e->getMessage());
             return $this->generatePlaceholderImage($content);
-        }
-    }
-
-    private function addTextToImage($imagePath, $content)
-    {
-        try {
-            $image = new \Imagick($imagePath);
-            $draw = new \ImagickDraw();
-            $draw->setFillColor('black');
-            $draw->setFont(public_path('fonts/Roboto-Bold.ttf'));
-            $draw->setFontSize(40);
-            $draw->setGravity(\Imagick::GRAVITY_CENTER);
-
-            $text = Str::limit(strip_tags($content), 50);
-
-            $image->annotateImage($draw, 0, 0, 0, $text);
-            $image->writeImage($imagePath);
-
-            $image->clear();
-            $image->destroy();
-        } catch (Exception $e) {
-            Log::error("Failed to add text to image: " . $e->getMessage());
         }
     }
 
