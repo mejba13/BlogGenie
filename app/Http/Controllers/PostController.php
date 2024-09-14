@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Exception;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Http;
 
 class PostController extends Controller
 {
@@ -61,21 +60,31 @@ class PostController extends Controller
             ]);
 
             // Step 3: Attach Categories to the Post
-            foreach ($postData['categories'] as $categoryName) {
-                $category = Category::firstOrCreate([
-                    'name' => $categoryName,
-                    'slug' => Str::slug($categoryName),
-                ]);
-                $post->categories()->attach($category->id);
+            if (!empty($postData['categories'])) {
+                foreach ($postData['categories'] as $categoryName) {
+                    $categoryName = trim($categoryName);
+                    if (!empty($categoryName)) {
+                        $category = Category::firstOrCreate([
+                            'name' => $categoryName,
+                            'slug' => Str::slug($categoryName),
+                        ]);
+                        $post->categories()->attach($category->id);
+                    }
+                }
             }
 
             // Step 4: Attach Tags to the Post
-            foreach ($postData['tags'] as $tagName) {
-                $tag = Tag::firstOrCreate([
-                    'name' => $tagName,
-                    'slug' => Str::slug($tagName),
-                ]);
-                $post->tags()->attach($tag->id);
+            if (!empty($postData['tags'])) {
+                foreach ($postData['tags'] as $tagName) {
+                    $tagName = trim($tagName);
+                    if (!empty($tagName)) {
+                        $tag = Tag::firstOrCreate([
+                            'name' => $tagName,
+                            'slug' => Str::slug($tagName),
+                        ]);
+                        $post->tags()->attach($tag->id);
+                    }
+                }
             }
 
             // Step 5: Add Meta Data to the Post
@@ -94,9 +103,8 @@ class PostController extends Controller
             // Step 6: Send Notification to Discord
             $post->notify(new NewPostNotification($post));
 
-            // Step 6: Send Success Email
+            // Step 7: Send Success Email
             Mail::to('mejba.13@gmail.com')->send(new PostCreatedMail($post));
-
 
             return redirect()->route('posts.create')->with('success', 'Post created successfully.');
 
@@ -129,5 +137,4 @@ class PostController extends Controller
 
         return view('posts.show', compact('post', 'metaTitle', 'metaDescription'));
     }
-
 }

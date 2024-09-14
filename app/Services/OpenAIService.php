@@ -19,7 +19,7 @@ class OpenAIService
         $this->apiKey = env('OPENAI_API_KEY');
     }
 
-    public function generatePostData($title)
+    public function generatePostData($title, $motto = '')
     {
         try {
             $response = $this->client->post('https://api.openai.com/v1/chat/completions', [
@@ -57,8 +57,8 @@ class OpenAIService
             $content = $body['choices'][0]['message']['content'];
             $postData = $this->parseResponse($content, $title);
 
-            // Generate featured image based on post content
-            $postData['featured_image_url'] = $this->generateImage($postData['content']);
+            // Generate featured image with title and motto
+            $postData['featured_image_url'] = $this->generateImage($postData['title'], $motto);
             $postData['video_url'] = $this->generateVideo($postData['content']);
 
             return $postData;
@@ -94,6 +94,7 @@ class OpenAIService
                 }, explode(',', $categories));
             } elseif (strpos($line, 'Tags:') !== false) {
                 $tags = str_replace('Tags:', '', $line);
+                // Clean tags by removing asterisks and trimming spaces
                 $data['tags'] = array_map(function ($tag) {
                     return str_replace('*', '', trim($tag));
                 }, explode(',', $tags));
@@ -116,11 +117,10 @@ class OpenAIService
         return $data;
     }
 
-    public function generateImage($content)
+    public function generateImage($title, $motto)
     {
         try {
-            // Use post content to generate image prompt
-            $prompt = Str::limit(strip_tags($content), 1000);
+            $prompt = Str::limit(strip_tags($title), 1000);
 
             $response = $this->client->post('https://api.openai.com/v1/images/generations', [
                 'headers' => [
@@ -128,7 +128,7 @@ class OpenAIService
                     'Content-Type'  => 'application/json',
                 ],
                 'json' => [
-                    'prompt'       => $prompt, // Use content-based prompt
+                    'prompt'       => $prompt,
                     'n'            => 1,
                     'size'         => '1024x1024',
                 ],
@@ -147,6 +147,8 @@ class OpenAIService
                 }
                 File::put(public_path($imageName), $imageContents);
 
+                // Add title motto text to image
+                $this->addTextToImage(public_path($imageName), $title, $motto);
                 return $imageName;
 
             } else {
@@ -155,13 +157,60 @@ class OpenAIService
 
         } catch (Exception $e) {
             Log::error("Failed to generate image: " . $e->getMessage());
-            return $this->generatePlaceholderImage($content);
+            return $this->generatePlaceholderImage($title);
         }
     }
 
-    private function generatePlaceholderImage($content)
+    private function addTextToImage($imagePath, $title, $motto)
     {
-        $text = Str::limit(strip_tags($content), 30);
+        try {
+            $image = new \Imagick($imagePath);
+            $draw = new \ImagickDraw();
+
+            // Set text color to black for better contrast
+            $draw->setFillColor(new \ImagickPixel('black'));
+
+            // Define the font path
+            $fontPath = public_path('fonts/Roboto-Bold.ttf');
+            if (!file_exists($fontPath)) {
+                Log::error("Font not found at $fontPath");
+                throw new Exception("Font not found.");
+            }
+            $draw->setFont($fontPath);
+
+            // Set font size for the title
+            $draw->setFontSize(50);
+
+            // Set Gravity to top center for the title
+            $draw->setGravity(\Imagick::GRAVITY_NORTH);
+
+            // Draw the title in the top center of the image
+            $image->annotateImage($draw, 0, 50, 0, Str::limit(strip_tags($title), 50));
+
+            // Change font size for the motto and set gravity to bottom center
+            $draw->setFontSize(30);
+            $draw->setGravity(\Imagick::GRAVITY_SOUTH);
+
+            // Draw the motto at the bottom of the image
+            $image->annotateImage($draw, 0, 50, 0, Str::limit(strip_tags($motto), 100));
+
+            // Write the image to disk
+            $image->writeImage($imagePath);
+
+            // Clear Imagick object resources
+            $image->clear();
+            $image->destroy();
+
+            Log::info("Text and motto added to image successfully");
+
+        } catch (Exception $e) {
+            Log::error("Failed to add text to image: " . $e->getMessage());
+        }
+    }
+
+    private function generatePlaceholderImage($title)
+    {
+        $text = Str::limit(strip_tags($title), 30);
         return 'https://via.placeholder.com/1024x1024.png?text=' . urlencode($text);
     }
 
