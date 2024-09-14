@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PostCreatedMail;
+use App\Mail\PostFailedMail;
 use App\Models\Post;
 use App\Models\Category;
 use App\Models\Tag;
@@ -92,15 +94,17 @@ class PostController extends Controller
             // Step 6: Send Notification to Discord
             $post->notify(new NewPostNotification($post));
 
+            // Step 6: Send Success Email
+            Mail::to('mejba.13@gmail.com')->send(new PostCreatedMail($post));
+
 
             return redirect()->route('posts.create')->with('success', 'Post created successfully.');
 
         } catch (Exception $e) {
             Log::error('Failed to generate or save post: ' . $e->getMessage());
 
-            Mail::raw('Failed to generate or save post for title: ' . $title, function ($message) {
-                $message->to('admin@example.com')->subject('Post Generation Failed');
-            });
+            // Send Failure Email
+            Mail::to('mejba.13@gmail.com')->send(new PostFailedMail($title, $e->getMessage()));
 
             return redirect()->route('posts.create')->withErrors('Failed to generate or save post. Please try again.');
         }
