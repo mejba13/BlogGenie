@@ -4,13 +4,13 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HomePageController;
 
 
 require __DIR__.'/auth.php';
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Route for the homepage, showing posts on the welcome page
+Route::get('/', [HomePageController::class, 'index'])->name('home');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 

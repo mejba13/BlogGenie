@@ -120,8 +120,8 @@ class PostController extends Controller
 
     public function index()
     {
-        // Retrieve all posts with their categories and tags
-        $posts = Post::with('categories', 'tags')->orderBy('published_at', 'desc')->get();
+        // Fetch posts with pagination (e.g., 10 posts per page)
+        $posts = Post::with('categories', 'tags')->orderBy('published_at', 'desc')->paginate(10);
 
         // Pass the posts to the view
         return view('posts.index', compact('posts'));

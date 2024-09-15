@@ -7,6 +7,9 @@
     <title>@yield('title', config('app.name'))</title>
     <meta name="description" content="@yield('meta_description', 'Default description')">
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="https://mejba.me/assets/images/logos/mejba.jpg">
+
     <!-- Fonts -->
     <link rel="stylesheet" href="https://fonts.bunny.net/css2?family=Nunito:wght@400;600;700&display=swap">
 
