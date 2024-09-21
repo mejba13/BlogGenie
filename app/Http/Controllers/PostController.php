@@ -12,6 +12,7 @@ use App\Notifications\NewPostNotification;
 use Illuminate\Http\Request;
 use App\Services\OpenAIService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Exception;
@@ -106,6 +107,9 @@ class PostController extends Controller
             // Step 7: Send Success Email
             Mail::to('mejba.13@gmail.com')->send(new PostCreatedMail($post));
 
+            // Clear the cache after a new post is created
+            Cache::forget('posts.all'); // Clears the cache for all posts
+
             return redirect()->route('posts.create')->with('success', 'Post created successfully.');
 
         } catch (Exception $e) {
@@ -120,16 +124,20 @@ class PostController extends Controller
 
     public function index()
     {
-        // Fetch posts with pagination (e.g., 10 posts per page)
-        $posts = Post::with('categories', 'tags')->orderBy('published_at', 'desc')->paginate(10);
+        // Cache the posts listing for 10 minutes (600 seconds)
+        $posts = Cache::remember('posts.all', 600, function () {
+            return Post::with('categories', 'tags')->orderBy('published_at', 'desc')->paginate(10);
+        });
 
-        // Pass the posts to the view
         return view('posts.index', compact('posts'));
     }
 
     public function show($id)
     {
-        $post = Post::with('categories', 'tags', 'meta')->findOrFail($id);
+        // Cache the post data for 1 hour (3600 seconds)
+        $post = Cache::remember("post.$id", 3600, function () use ($id) {
+            return Post::with('categories', 'tags', 'meta')->findOrFail($id);
+        });
 
         // Extract meta title and description
         $metaTitle = $post->meta()->where('meta_key', 'meta_title')->value('meta_value');
@@ -137,4 +145,5 @@ class PostController extends Controller
 
         return view('posts.show', compact('post', 'metaTitle', 'metaDescription'));
     }
+
 }
