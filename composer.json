@@ -11,7 +11,8 @@
         "laravel/framework": "^11.9",
         "laravel/horizon": "^5.28",
         "laravel/tinker": "^2.9",
-        "maatwebsite/excel": "^3.1"
+        "maatwebsite/excel": "^3.1",
+        "te7a-houdini/laravel-trix": "^3.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.13",

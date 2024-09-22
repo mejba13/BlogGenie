@@ -25,7 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('post_titles', PostTitleController::class);
 
     // Post routes for authenticated users (create, store, etc.)
-    Route::resource('posts', PostController::class)->except(['index', 'show']);
+    Route::resource('posts', PostController::class);
 });
 
 // Public routes for posts (viewing only)

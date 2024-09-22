@@ -37,11 +37,8 @@
                             <x-dropdown-link :href="route('post_titles.index')" :active="request()->routeIs('posts.create')">
                                 {{ __('Manage Post Titles') }}
                             </x-dropdown-link>
-                            <x-dropdown-link :href="route('posts.create')" :active="request()->routeIs('posts.create')">
-                                {{ __('Create New Post') }}
-                            </x-dropdown-link>
                             <x-dropdown-link :href="route('posts.index')" :active="request()->routeIs('posts.index')">
-                                {{ __('View All Published Posts') }}
+                                {{ __('Manage Posts') }}
                             </x-dropdown-link>
                         </x-slot>
                     </x-dropdown>

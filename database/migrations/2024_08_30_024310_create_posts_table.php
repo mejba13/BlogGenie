@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->longText('content');
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
+            $table->timestamp('publish_date')->nullable();
             $table->timestamp('published_at')->nullable();
             $table->timestamps();  // Adds "created_at" and "updated_at" columns
         });

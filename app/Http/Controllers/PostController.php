@@ -29,7 +29,7 @@ class PostController extends Controller
 
     public function create()
     {
-        return view('posts.create');
+        return view('admin.posts.create');
     }
 
     public function store(Request $request)
@@ -129,7 +129,7 @@ class PostController extends Controller
             return Post::with('categories', 'tags')->orderBy('published_at', 'desc')->paginate(10);
         });
 
-        return view('posts.index', compact('posts'));
+        return view('admin.posts.index', compact('posts'));
     }
 
     public function show($id)
@@ -143,7 +143,73 @@ class PostController extends Controller
         $metaTitle = $post->meta()->where('meta_key', 'meta_title')->value('meta_value');
         $metaDescription = $post->meta()->where('meta_key', 'meta_description')->value('meta_value');
 
-        return view('posts.show', compact('post', 'metaTitle', 'metaDescription'));
+        return view('admin.posts.show', compact('post', 'metaTitle', 'metaDescription'));
     }
+
+    public function edit($id)
+    {
+        $post = Post::with('categories', 'tags')->findOrFail($id);
+        $categories = Category::all();
+        return view('admin.posts.edit', compact('post', 'categories'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $post = Post::findOrFail($id);
+
+        // Validate the request
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048' // Validate the image
+        ]);
+
+        // Check if a new image is uploaded
+        if ($request->hasFile('featured_image')) {
+            // Store the uploaded image in the 'public/featured_images' directory
+            $imagePath = $request->file('featured_image')->store('featured_images', 'public');
+            $post->featured_image_url = $imagePath;  // Update with the image path
+        } else if ($request->input('featured_image_url')) {
+            // If a URL is provided, use it
+            $post->featured_image_url = $request->input('featured_image_url');
+        }
+
+        // Update Post data
+        $post->update([
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'video_url' => $request->input('video_url'),
+        ]);
+
+        // Update Categories
+        if ($request->has('categories')) {
+            $post->categories()->sync($request->input('categories'));
+        }
+
+        // Update Tags
+        if ($request->has('tags')) {
+            $tags = array_map('trim', explode(',', $request->input('tags')));
+            $tagIds = [];
+            foreach ($tags as $tagName) {
+                $tag = Tag::firstOrCreate(['name' => $tagName, 'slug' => Str::slug($tagName)]);
+                $tagIds[] = $tag->id;
+            }
+            $post->tags()->sync($tagIds);
+        }
+
+        // Redirect back with success message
+        return redirect()->route('posts.index')->with('success', 'Post updated successfully.');
+    }
+
+
+
+    public function destroy($id)
+    {
+        $post = Post::findOrFail($id);
+        $post->delete();
+        return redirect()->route('posts.index')->with('success', 'Post deleted successfully.');
+    }
+
+
 
 }
