@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
 class Post extends Model
 {
@@ -19,6 +20,11 @@ class Post extends Model
         'published_at',
         'featured_image_url',  // New field
         'video_url',  // New field
+    ];
+
+    // Ensure 'published_at' is treated as a date instance
+    protected $casts = [
+        'published_at' => 'datetime',
     ];
 
     public function user()

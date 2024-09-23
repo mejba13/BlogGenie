@@ -169,9 +169,6 @@ class PostController extends Controller
             // Store the uploaded image in the 'public/featured_images' directory
             $imagePath = $request->file('featured_image')->store('featured_images', 'public');
             $post->featured_image_url = $imagePath;  // Update with the image path
-        } else if ($request->input('featured_image_url')) {
-            // If a URL is provided, use it
-            $post->featured_image_url = $request->input('featured_image_url');
         }
 
         // Update Post data
@@ -200,7 +197,6 @@ class PostController extends Controller
         // Redirect back with success message
         return redirect()->route('posts.index')->with('success', 'Post updated successfully.');
     }
-
 
 
     public function destroy($id)

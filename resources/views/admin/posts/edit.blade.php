@@ -58,32 +58,25 @@
                             <small class="text-gray-500">Enter comma-separated tags.</small>
                         </div>
 
-                        <!-- Featured Image URL (Hidden if image is uploaded) -->
+                        <!-- Upload or Update Featured Image -->
                         <div class="mb-4">
-                            <label for="featured_image_url" class="block text-sm font-medium text-gray-700">Featured Image URL (or Upload New)</label>
-                            <input type="url" name="featured_image_url" id="featured_image_url" class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" value="{{ old('featured_image_url', $post->featured_image_url) }}">
-                            <small class="text-gray-500">Enter a URL if you want to use an external image. Leave empty if uploading a new image.</small>
-                        </div>
-
-                        <!-- Upload New Featured Image -->
-                        <div class="mb-4">
-                            <label for="featured_image" class="block text-sm font-medium text-gray-700">Upload New Featured Image</label>
+                            <label for="featured_image" class="block text-sm font-medium text-gray-700">Featured Image</label>
                             <input type="file" name="featured_image" id="featured_image" class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            <small class="text-gray-500">Upload a new image to replace the current featured image.</small>
-                        </div>
+                            <small class="text-gray-500">Upload a new image to replace the current one.</small>
 
-                        <!-- Display Current Featured Image -->
-                        @if($post->featured_image_url)
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700">Current Featured Image</label>
-                                <img src="{{ asset($post->featured_image_url) }}" alt="{{ $post->title }}" class="w-48 h-48 object-cover rounded shadow-sm">
-                            </div>
-                        @else
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700">No Featured Image Available</label>
-                                <img src="https://via.placeholder.com/150" alt="No Image Available" class="w-48 h-48 object-cover rounded shadow-sm">
-                            </div>
-                        @endif
+                            <!-- Display Current Featured Image -->
+                            @if($post->featured_image_url)
+                                <div class="mt-4">
+                                    <label class="block text-sm font-medium text-gray-700">Current Featured Image</label>
+                                    <img src="{{ asset($post->featured_image_url) }}" alt="{{ $post->title }}" class="w-48 h-48 object-cover rounded shadow-sm">
+                                </div>
+                            @else
+                                <div class="mt-4">
+                                    <label class="block text-sm font-medium text-gray-700">No Featured Image Available</label>
+                                    <img src="https://via.placeholder.com/150" alt="No Image Available" class="w-48 h-48 object-cover rounded shadow-sm">
+                                </div>
+                            @endif
+                        </div>
 
                         <!-- Video URL -->
                         <div class="mb-4">

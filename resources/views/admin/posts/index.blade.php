@@ -18,7 +18,7 @@
                     <table class="min-w-full bg-white">
                         <thead>
                         <tr>
-                            <th class="py-2 text-left">Featured Image</th>
+                            <th class="py-2 text-left">Featured</th>
                             <th class="py-2 text-left">Title</th>
                             <th class="py-2 text-left">Publish Date</th>
                             <th class="py-2 text-left">Content Preview</th>

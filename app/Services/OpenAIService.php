@@ -42,7 +42,7 @@ class OpenAIService
                     'max_tokens'  => 200,
                     'temperature' => 0.7,
                 ],
-                'timeout' => 300,
+                'timeout' => 600,
             ]);
 
             $body = json_decode($response->getBody()->getContents(), true);
