@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\PostTitleController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\HomePageController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +29,9 @@ Route::middleware('auth')->group(function () {
 
     // Post routes for authenticated users (create, store, etc.)
     Route::resource('admin/posts', PostController::class);
+
+    // Category management routes
+    Route::resource('admin/categories', CategoryController::class);
 
     // Public routes for posts (viewing only)
     Route::get('admin/posts', [PostController::class, 'index'])->name('posts.index');

@@ -16,6 +16,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
 
+                    <!-- Display success message -->
                     @if (session('success'))
                         <div class="mb-4 text-green-600">
                             {{ session('success') }}
@@ -28,27 +29,30 @@
 
                         <!-- Category Name -->
                         <div class="mb-4">
-                            <x-label for="name" :value="__('Category Name')" />
-                            <x-input id="name" class="block mt-1 w-full" type="text" name="name" value="{{ old('name') }}" required autofocus />
-                            @error('name')
-                            <div class="text-red-500 text-sm mt-2">{{ $message }}</div>
-                            @enderror
+                            <x-input-label for="name" :value="__('Category Name')" />
+                            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus />
+                            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                        </div>
+
+                        <!-- Slug (Auto-generated, but can be edited) -->
+                        <div class="mb-4">
+                            <x-input-label for="slug" :value="__('Slug')" />
+                            <x-text-input id="slug" class="block mt-1 w-full" type="text" name="slug" :value="old('slug')" required />
+                            <x-input-error :messages="$errors->get('slug')" class="mt-2" />
                         </div>
 
                         <!-- Category Description -->
                         <div class="mb-4">
-                            <x-label for="description" :value="__('Category Description')" />
-                            <textarea id="description" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" name="description" rows="5">{{ old('description') }}</textarea>
-                            @error('description')
-                            <div class="text-red-500 text-sm mt-2">{{ $message }}</div>
-                            @enderror
+                            <x-input-label for="description" :value="__('Category Description')" />
+                            <textarea id="description" class="block mt-1 w-full border-gray-300 rounded-md shadow-sm" name="description" rows="5">{{ old('description') }}</textarea>
+                            <x-input-error :messages="$errors->get('description')" class="mt-2" />
                         </div>
 
                         <!-- Submit Button -->
                         <div class="mt-4">
-                            <x-button class="ml-4 bg-blue-500 hover:bg-blue-600">
+                            <x-primary-button>
                                 {{ __('Create Category') }}
-                            </x-button>
+                            </x-primary-button>
                         </div>
                     </form>
 

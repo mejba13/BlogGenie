@@ -13,31 +13,62 @@ class CategoryController extends Controller
     {
         // List all categories
         $categories = Category::all();
-        return view('categories.index', compact('categories'));
+        return view('admin.categories.index', compact('categories'));
     }
 
     public function create()
     {
         // Show the form to create a new category
-        return view('categories.create');
+        return view('admin.categories.create');
     }
 
     public function store(Request $request)
     {
-        // Validate the input
         $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
             'description' => 'nullable|string',
         ]);
 
-        // Create a new category
         Category::create([
             'name' => $request->input('name'),
             'slug' => Str::slug($request->input('name')),
             'description' => $request->input('description'),
         ]);
 
-        // Redirect to the category list with a success message
         return redirect()->route('categories.index')->with('success', 'Category created successfully!');
+    }
+
+
+    public function edit(Category $category)
+    {
+        // Show the form to edit a category
+        return view('admin.categories.edit', compact('category'));
+    }
+
+    public function update(Request $request, Category $category)
+    {
+        // Validate the input
+        $request->validate([
+            'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
+            'description' => 'nullable|string',
+        ]);
+
+        // Update the category
+        $category->update([
+            'name' => $request->input('name'),
+            'slug' => Str::slug($request->input('name')),
+            'description' => $request->input('description'),
+        ]);
+
+        // Redirect to the category list with a success message
+        return redirect()->route('categories.index')->with('success', 'Category updated successfully!');
+    }
+    public function destroy(Category $category)
+    {
+        // Delete the category
+        $category->delete();
+
+        // Redirect to the category list with a success message
+        return redirect()->route('categories.index')->with('success', 'Category deleted successfully!');
     }
 }
