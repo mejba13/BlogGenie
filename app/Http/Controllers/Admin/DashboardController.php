@@ -3,17 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
+use App\Models\Post;
+use App\Models\Tag;
 
 class DashboardController extends Controller
 {
-    /**
-     * Display the admin dashboard.
-     *
-     * @return \Illuminate\View\View
-     */
     public function index()
     {
-        // Return the admin dashboard view
-        return view('admin.dashboard');
+        $postCount = Post::count();
+        $categoryCount = Category::count();
+        $tagCount = Tag::count();
+
+        return view('dashboard', compact('postCount', 'categoryCount', 'tagCount'));
     }
 }

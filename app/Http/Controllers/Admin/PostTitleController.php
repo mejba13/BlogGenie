@@ -1,8 +1,9 @@
 <?php
 
 // app/Http/Controllers/PostTitleController.php
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\PostTitle;
 use Illuminate\Http\Request;
 
