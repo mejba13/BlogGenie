@@ -111,7 +111,7 @@ class PostController extends Controller
             // Clear the cache after a new post is created
             Cache::forget('posts.all'); // Clears the cache for all posts
 
-            return redirect()->route('posts.create')->with('success', 'Post created successfully.');
+            return redirect()->route('admin.posts.index')->with('success', 'Post created successfully.');
 
         } catch (Exception $e) {
             Log::error('Failed to generate or save post: ' . $e->getMessage());
@@ -119,7 +119,7 @@ class PostController extends Controller
             // Send Failure Email
             Mail::to('mejba.13@gmail.com')->send(new PostFailedMail($title, $e->getMessage()));
 
-            return redirect()->route('posts.create')->withErrors('Failed to generate or save post. Please try again.');
+            return redirect()->route('admin.posts.index')->withErrors('Failed to generate or save post. Please try again.');
         }
     }
 
@@ -156,13 +156,15 @@ class PostController extends Controller
 
     public function update(Request $request, $id)
     {
+        // Find the post by its ID, or fail if not found
         $post = Post::findOrFail($id);
 
-        // Validate the request
+        // Validate the request inputs
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048' // Validate the image
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate the image
+            'status' => 'required|in:draft,published,archived', // Validate the status
         ]);
 
         // Check if a new image is uploaded
@@ -172,26 +174,29 @@ class PostController extends Controller
             $post->featured_image_url = $imagePath;  // Update with the image path
         }
 
-        // Update Post data
+        // Update post data (including video_url and status)
         $post->update([
             'title' => $request->input('title'),
             'content' => $request->input('content'),
             'video_url' => $request->input('video_url'),
+            'status' => $request->input('status'), // Update post status
         ]);
 
-        // Update Categories
+        // Update categories if present
         if ($request->has('categories')) {
             $post->categories()->sync($request->input('categories'));
         }
 
-        // Update Tags
+        // Update tags if present
         if ($request->has('tags')) {
             $tags = array_map('trim', explode(',', $request->input('tags')));
             $tagIds = [];
             foreach ($tags as $tagName) {
-                $tag = Tag::firstOrCreate(['name' => $tagName, 'slug' => Str::slug($tagName)]);
+                // Create tag if not exists and retrieve its ID
+                $tag = Tag::firstOrCreate(['name' => $tagName], ['slug' => Str::slug($tagName)]);
                 $tagIds[] = $tag->id;
             }
+            // Sync tags with the post
             $post->tags()->sync($tagIds);
         }
 
@@ -200,11 +205,12 @@ class PostController extends Controller
     }
 
 
+
     public function destroy($id)
     {
         $post = Post::findOrFail($id);
         $post->delete();
-        return redirect()->route('posts.index')->with('success', 'Post deleted successfully.');
+        return redirect()->route('admin.posts.index')->with('success', 'Post deleted successfully.');
     }
 
 

@@ -43,9 +43,9 @@
                             <x-dropdown-link :href="route('categories.index')" :active="request()->routeIs('categories.index')">
                                 {{ __('Manage Categories') }}
                             </x-dropdown-link>
-{{--                            <x-dropdown-link :href="route('tags.index')" :active="request()->routeIs('tags.index')">--}}
-{{--                                {{ __('Manage Tags') }}--}}
-{{--                            </x-dropdown-link>--}}
+                            <x-dropdown-link :href="route('tags.index')" :active="request()->routeIs('tags.index')">
+                                {{ __('Manage Tags') }}
+                            </x-dropdown-link>
                         </x-slot>
                     </x-dropdown>
                 </div>

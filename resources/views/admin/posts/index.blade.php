@@ -15,6 +15,13 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
 
+                    {{-- Display Session Success Message --}}
+                    @if (session('success'))
+                        <div class="mb-4 text-green-600">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+
                     <table class="min-w-full bg-white">
                         <thead>
                         <tr>
@@ -22,6 +29,7 @@
                             <th class="py-2 text-left">Title</th>
                             <th class="py-2 text-left">Publish Date</th>
                             <th class="py-2 text-left">Content Preview</th>
+                            <th class="py-2 text-left">Status</th>
                             <th class="py-2 text-left">Actions</th>
                         </tr>
                         </thead>
@@ -52,9 +60,14 @@
                                     {{ Str::limit(strip_tags($post->content), 100, '...') }}
                                 </td>
 
+                                <!-- Status -->
+                                <td class="py-4 px-6 text-gray-600">
+                                    {{ ucfirst($post->status) }}
+                                </td>
+
                                 <!-- Actions (View / Edit / Delete) -->
                                 <td class="py-4 px-6">
-                                    <a href="{{ route('posts.show', $post->id) }}" class="text-indigo-500 hover:text-indigo-700 mr-4">View</a>
+                                    <a href="{{ route('posts.show', $post->id) }}" class="text-blue-500 hover:text-blue-700 mr-4">View</a>
                                     <a href="{{ route('posts.edit', $post->id) }}" class="text-blue-500 hover:text-blue-700 mr-4">Edit</a>
                                     <form action="{{ route('posts.destroy', $post->id) }}" method="POST" class="inline-block">
                                         @csrf
@@ -65,7 +78,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center py-6 text-gray-500">No posts found.</td>
+                                <td colspan="6" class="text-center py-6 text-gray-500">No posts found.</td>
                             </tr>
                         @endforelse
                         </tbody>

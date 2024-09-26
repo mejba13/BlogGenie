@@ -21,7 +21,7 @@
                         </div>
                     @endif
 
-                    <!-- Edit Post Form (add enctype for file uploads) -->
+                    <!-- Edit Post Form -->
                     <form action="{{ route('posts.update', $post->id) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
@@ -82,6 +82,16 @@
                         <div class="mb-4">
                             <label for="video_url" class="block text-sm font-medium text-gray-700">Video URL</label>
                             <input type="url" name="video_url" id="video_url" class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" value="{{ old('video_url', $post->video_url) }}">
+                        </div>
+
+                        <!-- Status -->
+                        <div class="mb-4">
+                            <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                            <select name="status" id="status" class="mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                <option value="draft" {{ $post->status === 'draft' ? 'selected' : '' }}>Draft</option>
+                                <option value="published" {{ $post->status === 'published' ? 'selected' : '' }}>Published</option>
+                                <option value="archived" {{ $post->status === 'archived' ? 'selected' : '' }}>Archived</option>
+                            </select>
                         </div>
 
                         <!-- Update Button -->
