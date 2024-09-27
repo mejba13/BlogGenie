@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Tag;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class TagController extends Controller
@@ -35,6 +36,9 @@ class TagController extends Controller
             'slug' => Str::slug($request->input('name')),
         ]);
 
+        // Clear the cache after a new post is created
+        Cache::forget('posts.all'); // Clears the cache for all posts
+
         // Redirect to the tag list with a success message
         return redirect()->route('tags.index')->with('success', 'Tag created successfully!');
     }
@@ -59,6 +63,9 @@ class TagController extends Controller
             'name' => $request->input('name'),
             'slug' => Str::slug($request->input('name')),
         ]);
+
+        // Clear the cache after a new post is created
+        Cache::forget('posts.all'); // Clears the cache for all posts
 
         // Redirect to the tag list with a success message
         return redirect()->route('tags.index')->with('success', 'Tag updated successfully!');

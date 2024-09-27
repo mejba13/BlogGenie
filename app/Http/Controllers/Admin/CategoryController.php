@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class CategoryController extends Controller
@@ -35,6 +36,9 @@ class CategoryController extends Controller
             'description' => $request->input('description'),
         ]);
 
+        // Clear the cache after a new post is created
+        Cache::forget('posts.all'); // Clears the cache for all posts
+
         return redirect()->route('categories.index')->with('success', 'Category created successfully!');
     }
 
@@ -59,6 +63,9 @@ class CategoryController extends Controller
             'slug' => Str::slug($request->input('name')),
             'description' => $request->input('description'),
         ]);
+
+        // Clear the cache after a new post is created
+        Cache::forget('posts.all'); // Clears the cache for all posts
 
         // Redirect to the category list with a success message
         return redirect()->route('categories.index')->with('success', 'Category updated successfully!');

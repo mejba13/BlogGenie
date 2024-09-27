@@ -200,6 +200,9 @@ class PostController extends Controller
             $post->tags()->sync($tagIds);
         }
 
+        // Clear the cache after a new post is created
+        Cache::forget('posts.all'); // Clears the cache for all posts
+
         // Redirect back with success message
         return redirect()->route('posts.index')->with('success', 'Post updated successfully.');
     }
