@@ -7,12 +7,15 @@
 
     <div class="flex justify-center self-start py-12">
         <div class="w-full max-w-2xl bg-white shadow-md rounded-lg p-6">
+
+            <!-- Success message display -->
             @if (session('success'))
                 <div class="mb-4 text-green-600">
                     {{ session('success') }}
                 </div>
             @endif
 
+            <!-- Error message display -->
             @if ($errors->any())
                 <div class="mb-4 text-red-600">
                     <ul>
@@ -23,7 +26,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('posts.store') }}" method="POST">
+            <form action="{{ route('admin.posts.store') }}" method="POST">
                 @csrf
 
                 <!-- Title -->

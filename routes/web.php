@@ -29,7 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('admin/post_titles', PostTitleController::class);
 
     // Post routes for authenticated users (create, store, etc.)
-    Route::resource('admin/posts', PostController::class);
+    Route::resource('admin/posts', PostController::class, ['as' => 'admin']);
 
     // Category management routes
     Route::resource('admin/categories', CategoryController::class);

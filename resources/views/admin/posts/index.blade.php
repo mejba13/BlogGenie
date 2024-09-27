@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Post Titles') }}
             </h2>
-            <a href="{{ route('posts.create') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600 transition">
+            <a href="{{ route('admin.posts.create') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600 transition">
                 Create Post
             </a>
         </div>
@@ -67,9 +67,9 @@
 
                                 <!-- Actions (View / Edit / Delete) -->
                                 <td class="py-4 px-6">
-                                    <a href="{{ route('posts.show', $post->id) }}" class="text-blue-500 hover:text-blue-700 mr-4">View</a>
-                                    <a href="{{ route('posts.edit', $post->id) }}" class="text-blue-500 hover:text-blue-700 mr-4">Edit</a>
-                                    <form action="{{ route('posts.destroy', $post->id) }}" method="POST" class="inline-block">
+                                    <a href="{{ route('admin.posts.show', $post->id) }}" class="text-blue-500 hover:text-blue-700 mr-4">View</a>
+                                    <a href="{{ route('admin.posts.edit', $post->id) }}" class="text-blue-500 hover:text-blue-700 mr-4">Edit</a>
+                                    <form action="{{ route('admin.posts.destroy', $post->id) }}" method="POST" class="inline-block">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-500 hover:text-red-700" onclick="return confirm('Are you sure you want to delete this post?')">Delete</button>

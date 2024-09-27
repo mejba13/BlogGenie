@@ -111,7 +111,7 @@ class PostController extends Controller
             // Clear the cache after a new post is created
             Cache::forget('posts.all'); // Clears the cache for all posts
 
-            return redirect()->route('admin.posts.index')->with('success', 'Post created successfully.');
+            return redirect()->route('admin.posts.create')->with('success', 'Post created successfully.');
 
         } catch (Exception $e) {
             Log::error('Failed to generate or save post: ' . $e->getMessage());
@@ -119,7 +119,7 @@ class PostController extends Controller
             // Send Failure Email
             Mail::to('mejba.13@gmail.com')->send(new PostFailedMail($title, $e->getMessage()));
 
-            return redirect()->route('admin.posts.index')->withErrors('Failed to generate or save post. Please try again.');
+            return redirect()->route('admin.posts.create')->withErrors('Failed to generate or save post. Please try again.');
         }
     }
 
@@ -213,7 +213,7 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $post->delete();
-        return redirect()->route('admin.posts.index')->with('success', 'Post deleted successfully.');
+        return redirect()->route('posts.index')->with('success', 'Post deleted successfully.');
     }
 
 
