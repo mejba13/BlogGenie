@@ -46,10 +46,8 @@
 
                     <!-- Display the post's tags -->
                     <div class="mb-4">
-                        <p class="text-sm text-gray-600">
-                            <strong>Tags:</strong>
-                        </p>
                         <div class="flex flex-wrap gap-2">
+                            <strong>Tags:</strong>
                             @foreach($post->tags as $tag)
                                 <a href="#" class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold py-1 px-3 rounded-full shadow-md hover:shadow-lg transition-shadow duration-200">{{ $tag->name }}</a>
                             @endforeach
