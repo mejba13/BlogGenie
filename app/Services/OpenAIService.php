@@ -32,30 +32,27 @@ class OpenAIService
                     'messages'    => [
                         [
                             'role'    => 'system',
-                            'content' => 'You are a helpful assistant that generates detailed blog posts.'
+                            'content' => 'You are a helpful assistant that generates well-structured and SEO-optimized blog posts. The content should be in HTML format with clear headings, paragraphs, and include a Table of Contents at the start of the post. The Table of Contents should have links to each section.'
                         ],
                         [
                             'role'    => 'user',
-                            'content' => "Generate a detailed blog post for the title: '$title'. Include a slug, post content, categories, tags, a featured image, and a video URL."
+                            'content' => "Generate a detailed blog post for the title: '$title'. Include a slug, post content, categories, tags, and a table of contents. Make sure the content is structured in HTML and easy to read."
                         ],
                     ],
-                    'max_tokens'  => 200,
+                    'max_tokens'  => 2000,
                     'temperature' => 0.7,
                 ],
-                'timeout' => 600,
+                'timeout' => 600,  // Increased timeout for large requests
             ]);
 
             $body = json_decode($response->getBody()->getContents(), true);
 
-            Log::info("OpenAI API response: " . json_encode($body));
-
             if (!isset($body['choices'][0]['message']['content'])) {
-                Log::error("OpenAI API did not return content. Response: " . json_encode($body));
-                throw new Exception("Failed to generate content.");
+                throw new Exception("OpenAI API did not return valid content: " . json_encode($body));
             }
 
             $content = $body['choices'][0]['message']['content'];
-            $postData = $this->parseResponse($content, $title);
+            $postData = $this->parseResponseWithTOC($content, $title);
 
             // Generate featured image with title and motto
             $postData['featured_image_url'] = $this->generateImage($postData['title'], $motto);
@@ -65,11 +62,11 @@ class OpenAIService
 
         } catch (Exception $e) {
             Log::error("OpenAI API error: " . $e->getMessage());
-            throw $e;
+            throw $e;  // Propagate the exception to the caller
         }
     }
 
-    private function parseResponse($response, $title)
+    private function parseResponseWithTOC($response, $title)
     {
         $data = [
             'title' => $title,
@@ -81,6 +78,9 @@ class OpenAIService
 
         $lines = explode("\n", $response);
         $isContent = false;
+        $toc = '<h2>Table of Contents</h2><ul>'; // For the table of contents
+        $content = '';
+        $sectionNumber = 1;
 
         foreach ($lines as $line) {
             $line = trim($line);
@@ -94,7 +94,6 @@ class OpenAIService
                 }, explode(',', $categories));
             } elseif (strpos($line, 'Tags:') !== false) {
                 $tags = str_replace('Tags:', '', $line);
-                // Clean tags by removing asterisks and trimming spaces
                 $data['tags'] = array_map(function ($tag) {
                     return str_replace('*', '', trim($tag));
                 }, explode(',', $tags));
@@ -104,23 +103,33 @@ class OpenAIService
             }
 
             if ($isContent && !empty($line)) {
-                $data['content'] .= $line . "\n";
+                if (strpos($line, '## ') === 0) {
+                    $toc .= "<li><a href='#section-$sectionNumber'>" . substr($line, 3) . "</a></li>";
+                    $content .= "<h2 id='section-$sectionNumber'>" . substr($line, 3) . "</h2>";
+                    $sectionNumber++;
+                } else {
+                    $content .= "<p>$line</p>";
+                }
             }
         }
 
-        if (empty(trim($data['content']))) {
+        $toc .= '</ul>';
+
+        if (empty(trim($content))) {
             Log::error("Parsed content is empty. Response: " . $response);
             throw new Exception("Failed to generate post content.");
         }
 
-        Log::info("Parsed data: " . json_encode($data));
+        $data['content'] = $toc . $content;
+        Log::info("Parsed data with TOC: " . json_encode($data));
+
         return $data;
     }
 
     public function generateImage($title, $motto)
     {
         try {
-            $prompt = Str::limit(strip_tags($title), 1000);
+            $prompt = "Create a high-quality, professional blog post featured image with the text: '$title'. The image should be clean, modern, and aesthetically pleasing. Use a balanced layout with readable fonts. Incorporate a subtle background.";
 
             $response = $this->client->post('https://api.openai.com/v1/images/generations', [
                 'headers' => [
@@ -173,22 +182,21 @@ class OpenAIService
             // Define the font path
             $fontPath = public_path('fonts/Roboto-Bold.ttf');
             if (!file_exists($fontPath)) {
-                Log::error("Font not found at $fontPath");
-                throw new Exception("Font not found.");
+                throw new Exception("Font not found at $fontPath");
             }
             $draw->setFont($fontPath);
 
             // Set font size for the title
-            $draw->setFontSize(50);
+            $draw->setFontSize(60);  // Increase font size for better readability
 
             // Set Gravity to top center for the title
             $draw->setGravity(\Imagick::GRAVITY_NORTH);
 
             // Draw the title in the top center of the image
-            $image->annotateImage($draw, 0, 50, 0, Str::limit(strip_tags($title), 50));
+            $image->annotateImage($draw, 0, 70, 0, Str::limit(strip_tags($title), 50));
 
             // Change font size for the motto and set gravity to bottom center
-            $draw->setFontSize(30);
+            $draw->setFontSize(40);  // Increase font size for motto
             $draw->setGravity(\Imagick::GRAVITY_SOUTH);
 
             // Draw the motto at the bottom of the image
@@ -200,8 +208,6 @@ class OpenAIService
             // Clear Imagick object resources
             $image->clear();
             $image->destroy();
-
-            Log::info("Text and motto added to image successfully");
 
         } catch (Exception $e) {
             Log::error("Failed to add text to image: " . $e->getMessage());

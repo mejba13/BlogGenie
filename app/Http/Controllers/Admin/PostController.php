@@ -213,6 +213,8 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $post->delete();
+        // Clear the cache after a new post is created
+        Cache::forget('posts.all'); // Clears the cache for all posts
         return redirect()->route('posts.index')->with('success', 'Post deleted successfully.');
     }
 
