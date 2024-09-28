@@ -95,7 +95,6 @@ return [
     |
     */
 
-    App\Providers\TelescopeServiceProvider::class,
 
     'cipher' => 'AES-256-CBC',
 
