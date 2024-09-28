@@ -2,19 +2,17 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /var/www/html
-    overwrite: yes
+    destination: /var/www/html/
+    overwrite: true
+
+file_exists_behavior: OVERWRITE
 
 hooks:
   BeforeInstall:
-    - location: scripts/install_dependencies.sh
-      timeout: 300
+    - location: devops/before_install.sh
+      timeout: 600
       runas: root
   AfterInstall:
-    - location: scripts/migrate.sh
-      timeout: 300
-      runas: root
-  ApplicationStart:
-    - location: scripts/start_server.sh
-      timeout: 300
+    - location: devops/after_install.sh
+      timeout: 600
       runas: root
