@@ -1,8 +1,18 @@
 #!/bin/bash
-# Update and install necessary dependencies
+# Update system packages and install dependencies
 sudo yum update -y
 sudo yum install -y httpd php php-cli php-mbstring php-xml php-zip unzip git
 
-# Install Composer
+# Allow Composer to run as root
+export COMPOSER_ALLOW_SUPERUSER=1
+
+# Change to the project directory
 cd /var/www/html
-composer install --no-dev --optimize-autoloader
+
+# Ensure there's a composer.json file
+if [ -f composer.json ]; then
+    composer install --no-dev --optimize-autoloader
+else
+    echo "Error: composer.json not found in /var/www/html"
+    exit 1
+fi
