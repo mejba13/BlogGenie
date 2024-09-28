@@ -2,17 +2,14 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /var/www/html/
-    overwrite: true
-
-file_exists_behavior: OVERWRITE
+    destination: /var/www/html
 
 hooks:
-  BeforeInstall:
-    - location: devops/before_install.sh
-      timeout: 600
-      runas: root
   AfterInstall:
-    - location: devops/after_install.sh
-      timeout: 600
-      runas: root
+    - location: scripts/install_dependencies.sh
+      timeout: 300
+      runas: ec2-user
+  ApplicationStart:
+    - location: scripts/restart_server.sh
+      timeout: 300
+      runas: ec2-user
