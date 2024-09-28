@@ -1,2 +1,3 @@
 #!/bin/bash
-sudo systemctl start httpd
+service apache2 restart  # or 'nginx' if you're using nginx
+
