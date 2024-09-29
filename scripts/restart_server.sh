@@ -1,4 +1,3 @@
 #!/bin/bash
-
-# Restart Apache server
-sudo systemctl restart httpd
+# Restart Nginx server
+sudo systemctl restart nginx
