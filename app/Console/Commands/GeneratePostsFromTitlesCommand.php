@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\PostTitle;
 use App\Jobs\GeneratePostJob;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class GeneratePostsFromTitlesCommand extends Command
@@ -15,6 +16,7 @@ class GeneratePostsFromTitlesCommand extends Command
     public function handle()
     {
         $today = now()->format('Y-m-d');
+
         $postTitles = PostTitle::where('publish_date', $today)->get();
 
         if ($postTitles->isEmpty()) {
@@ -24,6 +26,7 @@ class GeneratePostsFromTitlesCommand extends Command
 
         foreach ($postTitles as $postTitle) {
             GeneratePostJob::dispatch($postTitle);
+            Cache::forget('posts.all'); // Clears the cache for all posts
             $this->info('Post generation queued for: ' . $postTitle->title);
             Log::info('Post generation queued for: ' . $postTitle->title);
         }

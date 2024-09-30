@@ -10,6 +10,7 @@ use App\Models\Tag;
 use App\Services\OpenAIService;
 use App\Notifications\NewPostNotification;
 use Exception;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PostCreatedMail;
@@ -78,6 +79,8 @@ class GeneratePostJob implements ShouldQueue
 
             // Step 5: Notify Discord
             $post->notify(new NewPostNotification($post));
+
+            Cache::forget('posts.all'); // Clears the cache for all posts
 
             // Step 6: Send Success Email
             Mail::to('mejba.13@gmail.com')->send(new PostCreatedMail($post));

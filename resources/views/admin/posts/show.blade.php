@@ -54,9 +54,9 @@
                         </div>
                     </div>
 
-                    <!-- Display the post's content -->
+                    <!-- Display the post's content with HTML formatting -->
                     <div class="post-content leading-relaxed text-gray-800">
-                        {!! nl2br(e($post->content)) !!}
+                        {!! $post->content !!} <!-- Correct use of to render HTML content -->
                     </div>
 
                     <div class="mt-6 text-right">

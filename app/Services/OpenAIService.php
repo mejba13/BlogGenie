@@ -39,7 +39,7 @@ class OpenAIService
                             'content' => "Generate a detailed blog post for the title: '$title'. Include a slug, post content, categories, tags, and a table of contents. Make sure the content is structured in HTML and easy to read."
                         ],
                     ],
-                    'max_tokens'  => 2000,
+                    'max_tokens'  => 200,
                     'temperature' => 0.7,
                 ],
                 'timeout' => 600,  // Increased timeout for large requests
