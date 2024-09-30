@@ -25,3 +25,8 @@ php artisan view:cache
 
 # Run migrations (if needed)
 php artisan migrate --force
+
+# Disable Telescope in production
+if [ "$APP_ENV" = "production" ]; then
+    echo "Telescope is disabled in production."
+fi
