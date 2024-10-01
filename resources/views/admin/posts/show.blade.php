@@ -54,9 +54,18 @@
                         </div>
                     </div>
 
-                    <!-- Display the post's content with HTML formatting -->
+                    <!-- Display the Table of Contents -->
+                    <div class="mb-8 p-4 bg-gray-50 rounded-lg shadow">
+                        <h3 class="text-lg font-bold mb-2">Table of Contents</h3>
+                        <ul class="list-disc pl-5">
+                            <!-- Assuming the table of contents is part of the post content -->
+                            {!! nl2br(e($post->toc)) !!}
+                        </ul>
+                    </div>
+
+                    <!-- Display the post's content -->
                     <div class="post-content leading-relaxed text-gray-800">
-                        {!! $post->content !!} <!-- Correct use of to render HTML content -->
+                        {!! $post->content !!}
                     </div>
 
                     <div class="mt-6 text-right">

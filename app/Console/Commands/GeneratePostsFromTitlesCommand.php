@@ -25,7 +25,9 @@ class GeneratePostsFromTitlesCommand extends Command
         }
 
         foreach ($postTitles as $postTitle) {
+
             GeneratePostJob::dispatch($postTitle);
+
             Cache::forget('posts.all'); // Clears the cache for all posts
             $this->info('Post generation queued for: ' . $postTitle->title);
             Log::info('Post generation queued for: ' . $postTitle->title);

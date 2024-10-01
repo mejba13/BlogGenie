@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Post;
 use App\Models\PostMeta;
 use App\Models\Tag;
+use App\Models\User;
 use App\Notifications\NewPostNotification;
 use App\Services\OpenAIService;
 use Exception;
@@ -43,7 +44,7 @@ class PostController extends Controller
         $user_id = Auth::id();
 
         try {
-            // Step 1: Generate Post Data using ChatGPT
+            // Step 1: Generate Post Data using OpenAI
             $postData = $this->openAIService->generatePostData($title);
 
             // Log the generated data
@@ -58,11 +59,12 @@ class PostController extends Controller
                 'status' => 'published',
                 'published_at' => now(),
                 'featured_image_url' => $postData['featured_image_url'],  // Save the featured image URL
-                'video_url' => $postData['video_url'],  // Save the video URL
+                'video_url' => $postData['video_url'] ?? null,  // Save the video URL, null if not generated
             ]);
 
             // Step 3: Attach Categories to the Post
             if (!empty($postData['categories'])) {
+                $categoryIds = [];
                 foreach ($postData['categories'] as $categoryName) {
                     $categoryName = trim($categoryName);
                     if (!empty($categoryName)) {
@@ -70,13 +72,15 @@ class PostController extends Controller
                             'name' => $categoryName,
                             'slug' => Str::slug($categoryName),
                         ]);
-                        $post->categories()->attach($category->id);
+                        $categoryIds[] = $category->id;
                     }
                 }
+                $post->categories()->sync($categoryIds);  // Sync instead of attaching individually
             }
 
             // Step 4: Attach Tags to the Post
             if (!empty($postData['tags'])) {
+                $tagIds = [];
                 foreach ($postData['tags'] as $tagName) {
                     $tagName = trim($tagName);
                     if (!empty($tagName)) {
@@ -84,9 +88,10 @@ class PostController extends Controller
                             'name' => $tagName,
                             'slug' => Str::slug($tagName),
                         ]);
-                        $post->tags()->attach($tag->id);
+                        $tagIds[] = $tag->id;
                     }
                 }
+                $post->tags()->sync($tagIds);
             }
 
             // Step 5: Add Meta Data to the Post
@@ -105,8 +110,11 @@ class PostController extends Controller
             // Step 6: Send Notification to Discord
             $post->notify(new NewPostNotification($post));
 
-            // Step 7: Send Success Email
-            Mail::to('mejba.13@gmail.com')->send(new PostCreatedMail($post));
+            // Fetch the user's email dynamically
+            $user = User::findOrFail($user_id);
+
+            // Step 3: Send email to the user
+            Mail::to($user->email)->send(new PostCreatedMail($post));
 
             // Clear the cache after a new post is created
             Cache::forget('posts.all'); // Clears the cache for all posts
@@ -116,10 +124,14 @@ class PostController extends Controller
         } catch (Exception $e) {
             Log::error('Failed to generate or save post: ' . $e->getMessage());
 
-            // Send Failure Email
-            Mail::to('mejba.13@gmail.com')->send(new PostFailedMail($title, $e->getMessage()));
+            // Fetch the user's email dynamically for failure mail
+            $user = User::findOrFail($user_id);
 
-            return redirect()->route('admin.posts.create')->withErrors('Failed to generate or save post. Please try again.');
+            // Send Failure Email
+            Mail::to($user->email)->send(new PostFailedMail($title, $e->getMessage()));
+
+
+            return redirect()->route('admin.posts.create')->withErrors('Failed to generate or save post. ' . $e->getMessage());
         }
     }
 
@@ -178,7 +190,7 @@ class PostController extends Controller
         $post->update([
             'title' => $request->input('title'),
             'content' => $request->input('content'),
-            'video_url' => $request->input('video_url'),
+            'video_url' => $request->input('video_url') ?? 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=819',  // Fallback video URL
             'status' => $request->input('status'), // Update post status
         ]);
 
@@ -207,8 +219,6 @@ class PostController extends Controller
         return redirect()->route('posts.index')->with('success', 'Post updated successfully.');
     }
 
-
-
     public function destroy($id)
     {
         $post = Post::findOrFail($id);
@@ -217,7 +227,4 @@ class PostController extends Controller
         Cache::forget('posts.all'); // Clears the cache for all posts
         return redirect()->route('posts.index')->with('success', 'Post deleted successfully.');
     }
-
-
-
 }

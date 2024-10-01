@@ -30,7 +30,7 @@ return [
 
     'discord' => [
         'webhook_url' => env('DISCORD_WEBHOOK_URL'),
-        'username' => env('DISCORD_USERNAME', 'Laravel Bot'),
+        'username' => env('DISCORD_USERNAME', 'BlogGenie Bot'),
     ],
 
     'slack' => [

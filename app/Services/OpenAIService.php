@@ -21,115 +21,126 @@ class OpenAIService
 
     public function generatePostData($title, $motto = '')
     {
-        try {
-            $response = $this->client->post('https://api.openai.com/v1/chat/completions', [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $this->apiKey,
-                    'Content-Type'  => 'application/json',
-                ],
-                'json' => [
-                    'model'       => 'gpt-3.5-turbo',
-                    'messages'    => [
-                        [
-                            'role'    => 'system',
-                            'content' => 'You are a helpful assistant that generates well-structured and SEO-optimized blog posts. The content should be in HTML format with clear headings, paragraphs, and include a Table of Contents at the start of the post. The Table of Contents should have links to each section.'
-                        ],
-                        [
-                            'role'    => 'user',
-                            'content' => "Generate a detailed blog post for the title: '$title'. Include a slug, post content, categories, tags, and a table of contents. Make sure the content is structured in HTML and easy to read."
-                        ],
+        $attempts = 0;
+        $maxAttempts = 3;
+
+        while ($attempts < $maxAttempts) {
+            try {
+                Log::info("Starting OpenAI request for title: {$title}, attempt: " . ($attempts + 1));
+
+                $response = $this->client->post('https://api.openai.com/v1/chat/completions', [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $this->apiKey,
+                        'Content-Type'  => 'application/json',
                     ],
-                    'max_tokens'  => 200,
-                    'temperature' => 0.7,
-                ],
-                'timeout' => 600,  // Increased timeout for large requests
-            ]);
+                    'json' => [
+                        'model'       => 'gpt-3.5-turbo',
+                        'messages'    => [
+                            [
+                                'role'    => 'system',
+                                'content' => 'You are a helpful assistant that generates well-structured and SEO-optimized blog posts. The content should be in HTML format with clear headings, paragraphs, and be easy to read.'
+                            ],
+                            [
+                                'role'    => 'user',
+                                'content' => "Generate a detailed blog post for the title: '$title'. Include a slug, post content, categories, and tags."
+                            ],
+                        ],
+                        'max_tokens'  => 1000,
+                        'temperature' => 0.7,
+                    ],
+                    'timeout' => 600,
+                ]);
 
-            $body = json_decode($response->getBody()->getContents(), true);
+                $body = json_decode($response->getBody()->getContents(), true);
 
-            if (!isset($body['choices'][0]['message']['content'])) {
-                throw new Exception("OpenAI API did not return valid content: " . json_encode($body));
+                // Log the response for debugging
+                Log::info("OpenAI API response: " . json_encode($body));
+
+                if (!isset($body['choices'][0]['message']['content']) || empty($body['choices'][0]['message']['content'])) {
+                    throw new Exception("OpenAI API did not return valid content: " . json_encode($body));
+                }
+
+                $content = $body['choices'][0]['message']['content'];
+                $sanitizedContent = $this->sanitizeContent($content);
+                $postData = $this->parseResponse($sanitizedContent, $title);
+
+                // Generate the featured image
+                $postData['featured_image_url'] = $this->generateImage($postData['title'], $motto);
+
+                // Fallback Video URL (YouTube Link)
+                $postData['video_url'] = $this->generateVideo($postData['content']) ?? 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=819';
+
+                return $postData;
+
+            } catch (Exception $e) {
+                Log::error("Attempt " . ($attempts + 1) . " failed: " . $e->getMessage());
+                $attempts++;
+
+                if ($attempts >= $maxAttempts) {
+                    throw new Exception("OpenAI API failed after multiple attempts.");
+                }
+
+                // Wait before retrying
+                sleep(2);
             }
-
-            $content = $body['choices'][0]['message']['content'];
-            $postData = $this->parseResponseWithTOC($content, $title);
-
-            // Generate featured image with title and motto
-            $postData['featured_image_url'] = $this->generateImage($postData['title'], $motto);
-            $postData['video_url'] = $this->generateVideo($postData['content']);
-
-            return $postData;
-
-        } catch (Exception $e) {
-            Log::error("OpenAI API error: " . $e->getMessage());
-            throw $e;  // Propagate the exception to the caller
         }
     }
 
-    private function parseResponseWithTOC($response, $title)
+    private function sanitizeContent($content)
+    {
+        $sanitizedContent = preg_replace('/\x00/', '', $content);
+        Log::info("Sanitized content: " . substr($sanitizedContent, 0, 200));  // Log a snippet of the sanitized content
+        return $sanitizedContent;
+    }
+
+    private function parseResponse($response, $title)
     {
         $data = [
-            'title' => $title,
-            'slug' => Str::slug($title),
-            'content' => '',
+            'title'      => $title,
+            'slug'       => Str::slug($title),
+            'content'    => '',
             'categories' => [],
-            'tags' => [],
+            'tags'       => [],
         ];
 
         $lines = explode("\n", $response);
         $isContent = false;
-        $toc = '<h2>Table of Contents</h2><ul>'; // For the table of contents
-        $content = '';
-        $sectionNumber = 1;
 
         foreach ($lines as $line) {
             $line = trim($line);
+            if (empty($line)) continue;
 
             if (strpos($line, 'Slug:') !== false) {
                 $data['slug'] = Str::slug(trim(str_replace('Slug:', '', $line)));
             } elseif (strpos($line, 'Categories:') !== false) {
                 $categories = str_replace('Categories:', '', $line);
-                $data['categories'] = array_map(function ($category) {
-                    return str_replace('*', '', trim($category));
-                }, explode(',', $categories));
+                $data['categories'] = array_map('trim', explode(',', $categories));
             } elseif (strpos($line, 'Tags:') !== false) {
                 $tags = str_replace('Tags:', '', $line);
-                $data['tags'] = array_map(function ($tag) {
-                    return str_replace('*', '', trim($tag));
-                }, explode(',', $tags));
+                $data['tags'] = array_map('trim', explode(',', $tags));
             } elseif (strpos($line, 'Post Content:') !== false) {
                 $isContent = true;
                 continue;
             }
 
-            if ($isContent && !empty($line)) {
-                if (strpos($line, '## ') === 0) {
-                    $toc .= "<li><a href='#section-$sectionNumber'>" . substr($line, 3) . "</a></li>";
-                    $content .= "<h2 id='section-$sectionNumber'>" . substr($line, 3) . "</h2>";
-                    $sectionNumber++;
-                } else {
-                    $content .= "<p>$line</p>";
-                }
+            if ($isContent) {
+                $data['content'] .= "<p>" . htmlspecialchars($line) . "</p>";
             }
         }
 
-        $toc .= '</ul>';
-
-        if (empty(trim($content))) {
+        if (empty(trim($data['content']))) {
             Log::error("Parsed content is empty. Response: " . $response);
             throw new Exception("Failed to generate post content.");
         }
 
-        $data['content'] = $toc . $content;
-        Log::info("Parsed data with TOC: " . json_encode($data));
-
+        Log::info("Parsed post data: " . json_encode($data));
         return $data;
     }
 
     public function generateImage($title, $motto)
     {
         try {
-            $prompt = "Create a high-quality, professional blog post featured image with the text: '$title'. The image should be clean, modern, and aesthetically pleasing. Use a balanced layout with readable fonts. Incorporate a subtle background.";
+            $prompt = "Create a high-quality, professional blog post featured image with the text: '$title'. The image should be clean, modern, and aesthetically pleasing. Use a balanced layout with readable fonts.";
 
             $response = $this->client->post('https://api.openai.com/v1/images/generations', [
                 'headers' => [
@@ -156,8 +167,6 @@ class OpenAIService
                 }
                 File::put(public_path($imageName), $imageContents);
 
-                // Add title motto text to image
-                $this->addTextToImage(public_path($imageName), $title, $motto);
                 return $imageName;
 
             } else {
@@ -167,50 +176,6 @@ class OpenAIService
         } catch (Exception $e) {
             Log::error("Failed to generate image: " . $e->getMessage());
             return $this->generatePlaceholderImage($title);
-        }
-    }
-
-    private function addTextToImage($imagePath, $title, $motto)
-    {
-        try {
-            $image = new \Imagick($imagePath);
-            $draw = new \ImagickDraw();
-
-            // Set text color to black for better contrast
-            $draw->setFillColor(new \ImagickPixel('black'));
-
-            // Define the font path
-            $fontPath = public_path('fonts/Roboto-Bold.ttf');
-            if (!file_exists($fontPath)) {
-                throw new Exception("Font not found at $fontPath");
-            }
-            $draw->setFont($fontPath);
-
-            // Set font size for the title
-            $draw->setFontSize(60);  // Increase font size for better readability
-
-            // Set Gravity to top center for the title
-            $draw->setGravity(\Imagick::GRAVITY_NORTH);
-
-            // Draw the title in the top center of the image
-            $image->annotateImage($draw, 0, 70, 0, Str::limit(strip_tags($title), 50));
-
-            // Change font size for the motto and set gravity to bottom center
-            $draw->setFontSize(40);  // Increase font size for motto
-            $draw->setGravity(\Imagick::GRAVITY_SOUTH);
-
-            // Draw the motto at the bottom of the image
-            $image->annotateImage($draw, 0, 50, 0, Str::limit(strip_tags($motto), 100));
-
-            // Write the image to disk
-            $image->writeImage($imagePath);
-
-            // Clear Imagick object resources
-            $image->clear();
-            $image->destroy();
-
-        } catch (Exception $e) {
-            Log::error("Failed to add text to image: " . $e->getMessage());
         }
     }
 
@@ -239,7 +204,7 @@ class OpenAIService
 
         } catch (Exception $e) {
             Log::error("Failed to generate the video: " . $e->getMessage());
-            return 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=819';
+            return null;  // No video generated, return null
         }
     }
 }
