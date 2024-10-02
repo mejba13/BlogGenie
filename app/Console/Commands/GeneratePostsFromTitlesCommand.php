@@ -7,6 +7,7 @@ use App\Models\PostTitle;
 use App\Jobs\GeneratePostJob;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use App\Models\User;
 
 class GeneratePostsFromTitlesCommand extends Command
 {
@@ -15,7 +16,6 @@ class GeneratePostsFromTitlesCommand extends Command
 
     public function handle()
     {
-        // Get today's date in 'Y-m-d' format
         $today = now()->format('Y-m-d');
 
         try {
@@ -27,9 +27,16 @@ class GeneratePostsFromTitlesCommand extends Command
                 return;
             }
 
-            // Dispatch jobs to generate posts
+            // Dynamically fetch the user (admin or some specific role)
+            $user = User::where('role', 'admin')->first(); // Assume there's a 'role' field in your User model
+            if (!$user) {
+                $this->error('No admin user found!');
+                return;
+            }
+
             foreach ($postTitles as $postTitle) {
-                GeneratePostJob::dispatch($postTitle);
+                // Dispatch the job with both PostTitle and the dynamic User
+                GeneratePostJob::dispatch($postTitle, $user);
 
                 // Log the job dispatch
                 $this->info('Post generation queued for: ' . $postTitle->title);
@@ -41,7 +48,6 @@ class GeneratePostsFromTitlesCommand extends Command
             $this->info('Cache cleared for all posts.');
 
         } catch (\Exception $e) {
-            // Log any exception that occurs
             Log::error('Error generating posts from titles: ' . $e->getMessage());
             $this->error('An error occurred while generating posts.');
         }

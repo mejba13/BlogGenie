@@ -24,3 +24,43 @@
 .modern-button:active {
     background: linear-gradient(90deg, #1aa34a 0%, #1db954 100%); /* Keep the hover effect */
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2); /* Slight
+
+/*Single post page */
+
+    .post-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+    }
+
+    .post-container h1 {
+        font-size: 2.5em;
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    .post-container h2 {
+        font-size: 1.8em;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        color: #555;
+    }
+
+    .post-container p {
+        font-size: 1.2em;
+        line-height: 1.6;
+        margin-bottom: 15px;
+        color: #666;
+    }
+
+    .post-container a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .post-container a:hover {
+        text-decoration: underline;
+    }

@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\PostMeta;
 use App\Models\PostTitle;
 use App\Models\Tag;
+use App\Models\User;
 use App\Services\OpenAIService;
 use App\Notifications\NewPostNotification;
 use Exception;
@@ -27,15 +28,18 @@ class GeneratePostJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $postTitle;
+    public $user;
 
     /**
      * Create a new job instance.
      *
      * @param PostTitle $postTitle
+     * @param User $user
      */
-    public function __construct(PostTitle $postTitle)
+    public function __construct(PostTitle $postTitle, User $user)
     {
         $this->postTitle = $postTitle;
+        $this->user = $user; // Inject the user dynamically
     }
 
     /**
@@ -51,7 +55,7 @@ class GeneratePostJob implements ShouldQueue
 
             // Step 2: Create a new Post record
             $post = Post::create([
-                'user_id' => 1,  // Assuming the admin user ID is 1
+                'user_id' => $this->user->id, // Dynamically assign the user
                 'title' => $postData['title'],
                 'slug' => $postData['slug'],
                 'content' => $postData['content'],
@@ -82,19 +86,22 @@ class GeneratePostJob implements ShouldQueue
 
             Cache::forget('posts.all'); // Clears the cache for all posts
 
-            // Step 6: Send Success Email
-            Mail::to('mejba.13@gmail.com')->send(new PostCreatedMail($post));
+            // Step 6: Send Success Email to the dynamic user
+            Mail::to($this->user->email)->send(new PostCreatedMail($post));
 
             Log::info("Post created successfully: " . $post->title);
 
         } catch (Exception $e) {
             Log::error('Post generation failed: ' . $e->getMessage());
 
-            // Send Failure Email
-            Mail::to('mejba.13@gmail.com')->send(new PostFailedMail($this->postTitle->title, $e->getMessage()));
+            // Send Failure Email to the dynamic user
+            Mail::to($this->user->email)->send(new PostFailedMail($this->postTitle->title, $e->getMessage()));
         }
     }
 
+    /**
+     * Attach categories and tags to the post.
+     */
     private function attachCategoriesAndTags(Post $post, $postData)
     {
         // Attach Categories

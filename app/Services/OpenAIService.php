@@ -38,14 +38,14 @@ class OpenAIService
                         'messages'    => [
                             [
                                 'role'    => 'system',
-                                'content' => 'You are a helpful assistant that generates well-structured and SEO-optimized blog posts. The content should be in HTML format with clear headings, paragraphs, and be easy to read.'
+                                'content' => 'You are a helpful assistant that generates well-structured and SEO-optimized blog posts. The content should be structured in proper HTML format with a container class. It should include <h1> for title, <h2> for sections, and <p> for paragraphs. Each section should be informative and clearly divided.'
                             ],
                             [
                                 'role'    => 'user',
-                                'content' => "Generate a detailed blog post for the title: '$title'. Include a slug, post content, categories, and tags."
+                                'content' => "Generate a detailed blog post for the title: '$title'. Structure the post with clear <h1>, <h2>, and <p> tags. The content should be well-written, informative, and divided into relevant sections. Ensure there is a slug, categories, tags, and post content, all wrapped in a container class."
                             ],
                         ],
-                        'max_tokens'  => 1000,
+                        'max_tokens'  => 1500, // Increase to allow more detailed posts
                         'temperature' => 0.7,
                     ],
                     'timeout' => 600,
@@ -98,7 +98,7 @@ class OpenAIService
         $data = [
             'title'      => $title,
             'slug'       => Str::slug($title),
-            'content'    => '',
+            'content'    => "<div class='post-container'>" . $response . "</div>",  // Wrap content in post-container class
             'categories' => [],
             'tags'       => [],
         ];
