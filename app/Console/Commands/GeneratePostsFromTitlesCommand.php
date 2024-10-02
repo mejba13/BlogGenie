@@ -15,22 +15,35 @@ class GeneratePostsFromTitlesCommand extends Command
 
     public function handle()
     {
+        // Get today's date in 'Y-m-d' format
         $today = now()->format('Y-m-d');
 
-        $postTitles = PostTitle::where('publish_date', $today)->get();
+        try {
+            // Fetch post titles scheduled for today
+            $postTitles = PostTitle::where('publish_date', $today)->get();
 
-        if ($postTitles->isEmpty()) {
-            $this->info('No posts to generate for today.');
-            return;
-        }
+            if ($postTitles->isEmpty()) {
+                $this->info('No posts to generate for today.');
+                return;
+            }
 
-        foreach ($postTitles as $postTitle) {
+            // Dispatch jobs to generate posts
+            foreach ($postTitles as $postTitle) {
+                GeneratePostJob::dispatch($postTitle);
 
-            GeneratePostJob::dispatch($postTitle);
+                // Log the job dispatch
+                $this->info('Post generation queued for: ' . $postTitle->title);
+                Log::info('Post generation queued for: ' . $postTitle->title);
+            }
 
-            Cache::forget('posts.all'); // Clears the cache for all posts
-            $this->info('Post generation queued for: ' . $postTitle->title);
-            Log::info('Post generation queued for: ' . $postTitle->title);
+            // Clear the cached posts after all jobs have been queued
+            Cache::forget('posts.all');
+            $this->info('Cache cleared for all posts.');
+
+        } catch (\Exception $e) {
+            // Log any exception that occurs
+            Log::error('Error generating posts from titles: ' . $e->getMessage());
+            $this->error('An error occurred while generating posts.');
         }
     }
 }

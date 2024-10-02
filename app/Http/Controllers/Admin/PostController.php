@@ -47,7 +47,6 @@ class PostController extends Controller
             // Step 1: Generate Post Data using OpenAI
             $postData = $this->openAIService->generatePostData($title);
 
-            // Log the generated data
             Log::info("Generated Post Data: " . json_encode($postData));
 
             // Step 2: Create and Save the Post
@@ -58,38 +57,32 @@ class PostController extends Controller
                 'content' => $postData['content'],
                 'status' => 'published',
                 'published_at' => now(),
-                'featured_image_url' => $postData['featured_image_url'],  // Save the featured image URL
-                'video_url' => $postData['video_url'] ?? null,  // Save the video URL, null if not generated
+                'featured_image_url' => $postData['featured_image_url'],
+                'video_url' => $postData['video_url'] ?? 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=819',  // Fallback video URL
             ]);
 
             // Step 3: Attach Categories to the Post
             if (!empty($postData['categories'])) {
                 $categoryIds = [];
                 foreach ($postData['categories'] as $categoryName) {
-                    $categoryName = trim($categoryName);
-                    if (!empty($categoryName)) {
-                        $category = Category::firstOrCreate([
-                            'name' => $categoryName,
-                            'slug' => Str::slug($categoryName),
-                        ]);
-                        $categoryIds[] = $category->id;
-                    }
+                    $category = Category::firstOrCreate([
+                        'name' => trim($categoryName),
+                        'slug' => Str::slug($categoryName),
+                    ]);
+                    $categoryIds[] = $category->id;
                 }
-                $post->categories()->sync($categoryIds);  // Sync instead of attaching individually
+                $post->categories()->sync($categoryIds);
             }
 
             // Step 4: Attach Tags to the Post
             if (!empty($postData['tags'])) {
                 $tagIds = [];
                 foreach ($postData['tags'] as $tagName) {
-                    $tagName = trim($tagName);
-                    if (!empty($tagName)) {
-                        $tag = Tag::firstOrCreate([
-                            'name' => $tagName,
-                            'slug' => Str::slug($tagName),
-                        ]);
-                        $tagIds[] = $tag->id;
-                    }
+                    $tag = Tag::firstOrCreate([
+                        'name' => trim($tagName),
+                        'slug' => Str::slug($tagName),
+                    ]);
+                    $tagIds[] = $tag->id;
                 }
                 $post->tags()->sync($tagIds);
             }
@@ -110,34 +103,28 @@ class PostController extends Controller
             // Step 6: Send Notification to Discord
             $post->notify(new NewPostNotification($post));
 
-            // Fetch the user's email dynamically
+            // Step 7: Send email to the user
             $user = User::findOrFail($user_id);
-
-            // Step 3: Send email to the user
             Mail::to($user->email)->send(new PostCreatedMail($post));
 
-            // Clear the cache after a new post is created
-            Cache::forget('posts.all'); // Clears the cache for all posts
+            // Clear the cache
+            Cache::forget('posts.all');
 
             return redirect()->route('admin.posts.create')->with('success', 'Post created successfully.');
 
         } catch (Exception $e) {
             Log::error('Failed to generate or save post: ' . $e->getMessage());
 
-            // Fetch the user's email dynamically for failure mail
+            // Step 8: Send failure email
             $user = User::findOrFail($user_id);
-
-            // Send Failure Email
             Mail::to($user->email)->send(new PostFailedMail($title, $e->getMessage()));
 
-
-            return redirect()->route('admin.posts.create')->withErrors('Failed to generate or save post. ' . $e->getMessage());
+            return redirect()->route('admin.posts.create')->withErrors('Failed to generate or save post: ' . $e->getMessage());
         }
     }
 
     public function index()
     {
-        // Cache the posts listing for 10 minutes (600 seconds)
         $posts = Cache::remember('posts.all', 600, function () {
             return Post::with('categories', 'tags')->orderBy('published_at', 'desc')->paginate(10);
         });
@@ -147,12 +134,10 @@ class PostController extends Controller
 
     public function show($id)
     {
-        // Cache the post data for 1 hour (3600 seconds)
         $post = Cache::remember("post.$id", 3600, function () use ($id) {
             return Post::with('categories', 'tags', 'meta')->findOrFail($id);
         });
 
-        // Extract meta title and description
         $metaTitle = $post->meta()->where('meta_key', 'meta_title')->value('meta_value');
         $metaDescription = $post->meta()->where('meta_key', 'meta_description')->value('meta_value');
 
@@ -163,59 +148,49 @@ class PostController extends Controller
     {
         $post = Post::with('categories', 'tags')->findOrFail($id);
         $categories = Category::all();
+
         return view('admin.posts.edit', compact('post', 'categories'));
     }
 
     public function update(Request $request, $id)
     {
-        // Find the post by its ID, or fail if not found
         $post = Post::findOrFail($id);
 
-        // Validate the request inputs
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate the image
-            'status' => 'required|in:draft,published,archived', // Validate the status
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status' => 'required|in:draft,published,archived',
         ]);
 
-        // Check if a new image is uploaded
         if ($request->hasFile('featured_image')) {
-            // Store the uploaded image in the 'public/featured_images' directory
             $imagePath = $request->file('featured_image')->store('featured_images', 'public');
-            $post->featured_image_url = $imagePath;  // Update with the image path
+            $post->featured_image_url = $imagePath;
         }
 
-        // Update post data (including video_url and status)
         $post->update([
             'title' => $request->input('title'),
             'content' => $request->input('content'),
-            'video_url' => $request->input('video_url') ?? 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=819',  // Fallback video URL
-            'status' => $request->input('status'), // Update post status
+            'video_url' => $request->input('video_url') ?? 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=819',
+            'status' => $request->input('status'),
         ]);
 
-        // Update categories if present
         if ($request->has('categories')) {
             $post->categories()->sync($request->input('categories'));
         }
 
-        // Update tags if present
         if ($request->has('tags')) {
             $tags = array_map('trim', explode(',', $request->input('tags')));
             $tagIds = [];
             foreach ($tags as $tagName) {
-                // Create tag if not exists and retrieve its ID
                 $tag = Tag::firstOrCreate(['name' => $tagName], ['slug' => Str::slug($tagName)]);
                 $tagIds[] = $tag->id;
             }
-            // Sync tags with the post
             $post->tags()->sync($tagIds);
         }
 
-        // Clear the cache after a new post is created
-        Cache::forget('posts.all'); // Clears the cache for all posts
+        Cache::forget('posts.all');
 
-        // Redirect back with success message
         return redirect()->route('posts.index')->with('success', 'Post updated successfully.');
     }
 
@@ -223,8 +198,8 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $post->delete();
-        // Clear the cache after a new post is created
-        Cache::forget('posts.all'); // Clears the cache for all posts
+        Cache::forget('posts.all');
+
         return redirect()->route('posts.index')->with('success', 'Post deleted successfully.');
     }
 }

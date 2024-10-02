@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Notifications\ChannelManager;
+use App\Broadcasting\DiscordChannel;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        // Additional boot logic here if needed
+        // Register custom Discord channel
+        $this->app->make(ChannelManager::class)->extend('custom_discord', function () {
+            return new DiscordChannel();
+        });
     }
 }
