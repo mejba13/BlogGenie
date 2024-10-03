@@ -13,11 +13,12 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-8 px-12 border-b border-gray-200">
 
-                    <!-- Display the post's featured image (fixed square ratio) -->
+                    <!-- Display the post's featured image (with standard aspect ratio) -->
                     @if($post->featured_image_url)
                         <div class="mb-6">
-                            <img src="{{ asset($post->featured_image_url) }}" alt="{{ $post->title }}"
-                                 class="w-full max-w-full h-[800px] object-cover rounded-lg shadow-sm">
+                            <img src="{{ asset($post->featured_image_url) }}"
+                                 alt="{{ $post->title }} featured image"
+                                 class="w-full max-w-6xl mx-auto h-auto aspect-[16/9] object-cover rounded-lg shadow-sm">
                         </div>
                     @endif
 
@@ -38,34 +39,39 @@
                     <div class="mb-4">
                         <p class="text-sm text-gray-600">
                             <strong>Categories:</strong>
-                            @foreach($post->categories as $category)
-                                <a href="#" class="text-indigo-500">{{ $category->name }}</a>@if(!$loop->last), @endif
-                            @endforeach
+                            @if($post->categories->isEmpty())
+                                <span class="text-gray-500">No categories assigned</span>
+                            @else
+                                @foreach($post->categories as $category)
+                                    <a href="{{ route('categories.show', $category->slug) }}" class="text-indigo-500 hover:underline">{{ $category->name }}</a>@if(!$loop->last), @endif
+                                @endforeach
+                            @endif
                         </p>
                     </div>
 
                     <!-- Display the post's tags -->
                     <div class="mb-4">
+                        <p><strong>Tags:</strong></p>
                         <div class="flex flex-wrap gap-2">
-                            <strong>Tags:</strong>
-                            @foreach($post->tags as $tag)
-                                <a href="#" class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold py-1 px-3 rounded-full shadow-md hover:shadow-lg transition-shadow duration-200">{{ $tag->name }}</a>
-                            @endforeach
+                            @if($post->tags->isEmpty())
+                                <span class="text-gray-500">No tags assigned</span>
+                            @else
+                                @foreach($post->tags as $tag)
+                                    <a href="{{ route('tags.show', $tag->slug) }}" class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold py-1 px-3 rounded-full shadow-md hover:shadow-lg transition-shadow duration-200">
+                                        {{ $tag->name }}
+                                    </a>
+                                @endforeach
+                            @endif
                         </div>
-                    </div>
-
-                    <!-- Display the Table of Contents -->
-                    <div class="mb-8 p-4 bg-gray-50 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-2">Table of Contents</h3>
-                        <ul class="list-disc pl-5">
-                            <!-- Assuming the table of contents is part of the post content -->
-                            {!! nl2br(e($post->toc)) !!}
-                        </ul>
                     </div>
 
                     <!-- Display the post's content -->
                     <div class="post-content leading-relaxed text-gray-800">
-                        {!! $post->content !!}
+                        @if(!empty($post->content))
+                            {!! $post->content !!}
+                        @else
+                            <p class="text-gray-600">No content available for this post.</p>
+                        @endif
                     </div>
 
                     <div class="mt-6 text-right">

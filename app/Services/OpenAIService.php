@@ -38,14 +38,14 @@ class OpenAIService
                         'messages'    => [
                             [
                                 'role'    => 'system',
-                                'content' => 'You are a helpful assistant that generates well-structured and SEO-optimized blog posts. The content should be structured in proper HTML format with a container class. It should include <h1> for title, <h2> for sections, and <p> for paragraphs. Each section should be informative and clearly divided.'
+                                'content' => 'You are a helpful assistant that generates well-structured, SEO-optimized blog posts. The content should be clean, without <html> or <body> tags, and organized using <h1>, <h2>, and <p> tags. Avoid generating text in images.'
                             ],
                             [
                                 'role'    => 'user',
-                                'content' => "Generate a detailed blog post for the title: '$title'. Structure the post with clear <h1>, <h2>, and <p> tags. The content should be well-written, informative, and divided into relevant sections. Ensure there is a slug, categories, tags, and post content, all wrapped in a container class."
+                                'content' => "Generate a detailed blog post for the title: '$title'. Structure the post with clear <h1>, <h2>, and <p> tags. The content should be well-written, informative, and divided into relevant sections. Ensure there is a slug, categories, tags, and post content. The post content should be plain text without a wrapping 'post-container' class."
                             ],
                         ],
-                        'max_tokens'  => 1500, // Increase to allow more detailed posts
+                        'max_tokens'  => 200, // Increase token limit for more detailed posts
                         'temperature' => 0.7,
                     ],
                     'timeout' => 600,
@@ -64,8 +64,8 @@ class OpenAIService
                 $sanitizedContent = $this->sanitizeContent($content);
                 $postData = $this->parseResponse($sanitizedContent, $title);
 
-                // Generate the featured image
-                $postData['featured_image_url'] = $this->generateImage($postData['title'], $motto);
+                // Generate the featured image without text
+                $postData['featured_image_url'] = $this->generateImage($postData['title'], substr(strip_tags($postData['content']), 0, 150));
 
                 // Fallback Video URL (YouTube Link)
                 $postData['video_url'] = $this->generateVideo($postData['content']) ?? 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=819';
@@ -98,7 +98,7 @@ class OpenAIService
         $data = [
             'title'      => $title,
             'slug'       => Str::slug($title),
-            'content'    => "<div class='post-container'>" . $response . "</div>",  // Wrap content in post-container class
+            'content'    => $response,  // Store plain text content without the 'post-container' class
             'categories' => [],
             'tags'       => [],
         ];
@@ -137,10 +137,11 @@ class OpenAIService
         return $data;
     }
 
-    public function generateImage($title, $motto)
+    public function generateImage($title, $contentSummary)
     {
         try {
-            $prompt = "Create a high-quality, professional blog post featured image with the text: '$title'. The image should be clean, modern, and aesthetically pleasing. Use a balanced layout with readable fonts.";
+            // Modify the image prompt to be based on the post content
+            $prompt = "Create a high-quality, professional blog post featured image based on the following content: '$contentSummary'. The image should be clean, modern, and aesthetically pleasing. Avoid using text in the image.";
 
             $response = $this->client->post('https://api.openai.com/v1/images/generations', [
                 'headers' => [
@@ -152,7 +153,7 @@ class OpenAIService
                     'n'            => 1,
                     'size'         => '1024x1024',
                 ],
-                'timeout' => 300,
+                'timeout' => 600,
             ]);
 
             $body = json_decode($response->getBody()->getContents(), true);
@@ -178,6 +179,7 @@ class OpenAIService
             return $this->generatePlaceholderImage($title);
         }
     }
+
 
     private function generatePlaceholderImage($title)
     {

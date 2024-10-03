@@ -68,20 +68,20 @@ class GeneratePostJob implements ShouldQueue
             // Step 3: Attach categories and tags
             $this->attachCategoriesAndTags($post, $postData);
 
-            // Step 4: Create Meta Data
+            // Step 4: Create Meta Data without HTML tags
             PostMeta::create([
                 'post_id' => $post->id,
                 'meta_key' => 'meta_title',
-                'meta_value' => $postData['title'],
+                'meta_value' => strip_tags($postData['title']),
             ]);
 
             PostMeta::create([
                 'post_id' => $post->id,
                 'meta_key' => 'meta_description',
-                'meta_value' => substr($postData['content'], 0, 150),
+                'meta_value' => substr(strip_tags($postData['content']), 0, 150),
             ]);
 
-            // Step 5: Notify Discord
+            // Step 5: Notify via Discord or other channels
             $post->notify(new NewPostNotification($post));
 
             Cache::forget('posts.all'); // Clears the cache for all posts
