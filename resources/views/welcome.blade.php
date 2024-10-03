@@ -82,10 +82,12 @@
                                     </div>
 
                                     <div class="relative flex items-center gap-6 lg:items-end">
-                                        <div id="docs-card-content" class="flex items-start gap-6 lg:flex-col">
+                                        <div id="docs-card-content" class="flex flex-col lg:flex-row items-start gap-6 lg:flex-col">
                                             <div class="pt-3 sm:pt-5 lg:pt-0">
+                                                <!-- Post Title -->
                                                 <h2 class="text-xl font-semibold text-black dark:text-white">{{ $post->title }}</h2>
-                                                <p class="mt-4 text-sm/relaxed">{{ Str::limit($post->content, 150) }}</p>
+                                                <!-- Post Content with Character Limit -->
+                                                <p class="mt-4 text-sm leading-relaxed">{{ Str::limit(strip_tags($post->content), 150) }}</p>
                                             </div>
                                         </div>
 
