@@ -3,13 +3,18 @@ os: linux
 files:
   - source: /
     destination: /var/www/html
+    overwrite: true
 
 hooks:
-  AfterInstall:
+  BeforeInstall:
     - location: scripts/install_dependencies.sh
       timeout: 300
-      runas: ec2-user
-  ApplicationStart:
-    - location: scripts/restart_server.sh
+      runas: root
+  AfterInstall:
+    - location: scripts/set_permissions.sh
       timeout: 300
-      runas: ec2-user
+      runas: root
+  ApplicationStart:
+    - location: scripts/restart_apache.sh
+      timeout: 300
+      runas: root
