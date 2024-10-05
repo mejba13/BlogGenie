@@ -72,7 +72,7 @@ class PostController extends Controller
             // Step 6: Clear Cache
             Cache::forget('posts.all');
 
-            return redirect()->route('admin.posts.index')->with('success', 'Post created successfully.');
+            return redirect()->route('admin.posts.create')->with('success', 'Post created successfully.');
 
         } catch (Exception $e) {
             Log::error('Post creation failed: ' . $e->getMessage());
