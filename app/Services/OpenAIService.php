@@ -45,7 +45,7 @@ class OpenAIService
                                 'content' => "Generate a detailed blog post for the title: '$title'. Structure the post with clear <h1>, <h2>, and <p> tags. The content should be well-written, informative, and divided into relevant sections. Ensure there is a slug, categories, tags, and post content. The post content should be plain text without a wrapping 'post-container' class."
                             ],
                         ],
-                        'max_tokens'  => 200, // Increase token limit for more detailed posts
+                        'max_tokens'  => 200, // You can adjust the token limit based on your needs
                         'temperature' => 0.7,
                     ],
                     'timeout' => 600,
@@ -98,7 +98,7 @@ class OpenAIService
         $data = [
             'title'      => $title,
             'slug'       => Str::slug($title),
-            'content'    => $response,  // Store plain text content without the 'post-container' class
+            'content'    => '',  // Initialize content
             'categories' => [],
             'tags'       => [],
         ];
@@ -179,7 +179,6 @@ class OpenAIService
             return $this->generatePlaceholderImage($title);
         }
     }
-
 
     private function generatePlaceholderImage($title)
     {
