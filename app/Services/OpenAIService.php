@@ -42,10 +42,10 @@ class OpenAIService
                             ],
                             [
                                 'role'    => 'user',
-                                'content' => "Generate a detailed blog post for the title: '$title'. Structure the post with clear <h1>, <h2>, and <p> tags. The content should be well-written, informative, and divided into relevant sections. Ensure there is a slug, categories, tags, and post content. The post content should be plain text without a wrapping 'post-container' class."
+                                'content' => "Generate a detailed blog post for the title: '$title'. Structure the post with clear <h1>, <h2>, and <p> tags. Ensure the post has categories, tags, and post content."
                             ],
                         ],
-                        'max_tokens'  => 1500, // You can adjust the token limit based on your needs
+                        'max_tokens'  => 1500, // Adjust token limit for larger responses
                         'temperature' => 0.7,
                     ],
                     'timeout' => 600,
@@ -140,7 +140,6 @@ class OpenAIService
     public function generateImage($title, $contentSummary)
     {
         try {
-            // Modify the image prompt to be based on the post content
             $prompt = "Create a high-quality, professional blog post featured image based on the following content: '$contentSummary'. The image should be clean, modern, and aesthetically pleasing. Avoid using text in the image.";
 
             $response = $this->client->post('https://api.openai.com/v1/images/generations', [

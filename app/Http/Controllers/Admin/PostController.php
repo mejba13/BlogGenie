@@ -7,17 +7,12 @@ use App\Models\Category;
 use App\Models\Post;
 use App\Models\PostMeta;
 use App\Models\Tag;
-use App\Models\User;
-use App\Notifications\NewPostNotification;
 use App\Services\OpenAIService;
-use App\Mail\PostCreatedMail;
-use App\Mail\PostFailedMail;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class PostController extends Controller
@@ -74,65 +69,20 @@ class PostController extends Controller
             // Step 5: Add Meta Data
             $this->addMetaData($post, $postData);
 
-            // Step 6: Send Discord Notification
-            $post->notify(new NewPostNotification($post));
-
-            // Fetch the authenticated user
-            $user = User::findOrFail($user_id);
-
-            // Step 7: Send Email Notification
-            Mail::to($user->email)->send(new PostCreatedMail($post));
-
-            // Clear Cache
+            // Step 6: Clear Cache
             Cache::forget('posts.all');
 
-            return redirect()->route('admin.posts.create')->with('success', 'Post created successfully.');
+            return redirect()->route('admin.posts.index')->with('success', 'Post created successfully.');
 
         } catch (Exception $e) {
             Log::error('Post creation failed: ' . $e->getMessage());
-
-            // Fetch the authenticated user
-            $user = User::findOrFail($user_id);
-
-            // Send Failure Email
-            Mail::to($user->email)->send(new PostFailedMail($title, $e->getMessage()));
 
             return redirect()->route('admin.posts.create')->withErrors('Failed to create post: ' . $e->getMessage());
         }
     }
 
     /**
-     * Display the list of posts.
-     */
-    public function index()
-    {
-        // Cache posts for 10 minutes (600 seconds)
-        $posts = Cache::remember('posts.all', 600, function () {
-            return Post::with('categories', 'tags')->orderBy('published_at', 'desc')->paginate(10);
-        });
-
-        return view('admin.posts.index', compact('posts'));
-    }
-
-    /**
-     * Display a single post.
-     */
-    public function show($id)
-    {
-        // Cache individual post for 1 hour
-        $post = Cache::remember("post.$id", 3600, function () use ($id) {
-            return Post::with('categories', 'tags', 'meta')->findOrFail($id);
-        });
-
-        // Extract meta title and description
-        $metaTitle = $post->meta()->where('meta_key', 'meta_title')->value('meta_value');
-        $metaDescription = $post->meta()->where('meta_key', 'meta_description')->value('meta_value');
-
-        return view('admin.posts.show', compact('post', 'metaTitle', 'metaDescription'));
-    }
-
-    /**
-     * Edit post.
+     * Edit post form.
      */
     public function edit($id)
     {
@@ -167,7 +117,7 @@ class PostController extends Controller
         $post->update([
             'title' => $request->input('title'),
             'content' => $request->input('content'),
-            'video_url' => $request->input('video_url') ?? 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=819',  // Fallback video URL
+            'video_url' => $request->input('video_url') ?? $post->video_url,  // Fallback video URL
             'status' => $request->input('status'),
         ]);
 
@@ -178,7 +128,33 @@ class PostController extends Controller
         // Clear Cache
         Cache::forget('posts.all');
 
-        return redirect()->route('posts.index')->with('success', 'Post updated successfully.');
+        return redirect()->route('admin.posts.index')->with('success', 'Post updated successfully.');
+    }
+
+    /**
+     * Display the list of posts.
+     */
+    public function index()
+    {
+        // Cache posts for 10 minutes (600 seconds)
+        $posts = Cache::remember('posts.all', 600, function () {
+            return Post::with('categories', 'tags')->orderBy('published_at', 'desc')->paginate(10);
+        });
+
+        return view('admin.posts.index', compact('posts'));
+    }
+
+    /**
+     * Display a single post.
+     */
+    public function show($id)
+    {
+        // Cache individual post for 1 hour
+        $post = Cache::remember("post.$id", 3600, function () use ($id) {
+            return Post::with('categories', 'tags', 'meta')->findOrFail($id);
+        });
+
+        return view('admin.posts.show', compact('post'));
     }
 
     /**
@@ -192,7 +168,7 @@ class PostController extends Controller
         // Clear cache for all posts
         Cache::forget('posts.all');
 
-        return redirect()->route('posts.index')->with('success', 'Post deleted successfully.');
+        return redirect()->route('admin.posts.index')->with('success', 'Post deleted successfully.');
     }
 
     /**
@@ -227,28 +203,18 @@ class PostController extends Controller
      */
     private function attachTags(Post $post, $tags)
     {
-        // Check if tags is a string, and if so, convert it to an array
-        if (is_string($tags)) {
-            $tags = explode(',', $tags);  // Convert comma-separated string to array
-        }
-
-        if (!empty($tags) && is_array($tags)) {
+        if (!empty($tags)) {
             $tagIds = [];
-
             foreach ($tags as $tagName) {
-                $tagName = trim($tagName);  // Trim any spaces around tag names
-
+                $tagName = trim($tagName);
                 if (!empty($tagName)) {
                     $tag = Tag::firstOrCreate([
                         'name' => $tagName,
                         'slug' => Str::slug($tagName),
                     ]);
-
                     $tagIds[] = $tag->id;
                 }
             }
-
-            // Sync tags with the post
             $post->tags()->sync($tagIds);
         }
     }
