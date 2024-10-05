@@ -37,7 +37,7 @@
                             <x-dropdown-link :href="route('post_titles.index')" :active="request()->routeIs('post_titles.index')">
                                 {{ __('Manage Post Titles') }}
                             </x-dropdown-link>
-                            <x-dropdown-link :href="route('posts.index')" :active="request()->routeIs('posts.index')">
+                            <x-dropdown-link :href="route('admin.posts.index')" :active="request()->routeIs('posts.index')">
                                 {{ __('Manage Posts') }}
                             </x-dropdown-link>
                             <x-dropdown-link :href="route('categories.index')" :active="request()->routeIs('categories.index')">

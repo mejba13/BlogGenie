@@ -75,7 +75,7 @@
                     </div>
 
                     <div class="mt-6 text-right">
-                        <a href="{{ route('posts.index') }}" class="inline-block bg-indigo-500 text-white py-2 px-4 rounded-full hover:bg-indigo-600">
+                        <a href="{{ route('admin.posts.index') }}" class="inline-block bg-indigo-500 text-white py-2 px-4 rounded-full hover:bg-indigo-600">
                             Back to Posts
                         </a>
                     </div>

@@ -29,17 +29,13 @@ Route::middleware('auth')->group(function () {
     Route::resource('admin/post_titles', PostTitleController::class);
 
     // Post routes for authenticated users (create, store, etc.)
-    Route::resource('admin/posts', PostController::class, ['as' => 'admin']);
+    Route::resource('admin/posts', PostController::class, ['as' => 'admin']); // This defines all CRUD routes for posts
 
     // Category management routes
     Route::resource('admin/categories', CategoryController::class);
 
     // Tags management routes
     Route::resource('admin/tags', TagController::class);
-
-    // Public routes for posts (viewing only)
-    Route::get('admin/posts', [PostController::class, 'index'])->name('posts.index');
-    Route::get('admin/posts/{id}', [PostController::class, 'show'])->name('posts.show');
 });
 
 // Fallback route if the page is not found
