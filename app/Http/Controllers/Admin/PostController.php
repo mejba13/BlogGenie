@@ -53,7 +53,7 @@ class PostController extends Controller
                 'user_id' => $user_id,
                 'title' => $postData['title'],
                 'slug' => $postData['slug'],
-                'content' => $postData['content'],
+                'content' => $postData['content'],  // Saving post content properly
                 'status' => 'published',
                 'published_at' => now(),
                 'featured_image_url' => $postData['featured_image_url'] ?? null,  // Image URL
@@ -66,7 +66,7 @@ class PostController extends Controller
             // Step 4: Attach Tags
             $this->attachTags($post, $postData['tags']);
 
-            // Step 5: Add Meta Data
+            // Step 5: Add Meta Data (Meta Title & Meta Description)
             $this->addMetaData($post, $postData);
 
             // Step 6: Clear Cache
@@ -79,7 +79,6 @@ class PostController extends Controller
             return redirect()->route('admin.posts.create')->withErrors('Failed to create post: ' . $e->getMessage());
         }
     }
-
 
     /**
      * Edit post form.
@@ -115,7 +114,7 @@ class PostController extends Controller
         // Update post data
         $post->update([
             'title' => $request->input('title'),
-            'content' => $request->input('content'),
+            'content' => $request->input('content'),  // Properly update post content
             'video_url' => $request->input('video_url') ?? $post->video_url,  // Fallback video URL
             'status' => $request->input('status'),
         ]);
@@ -194,10 +193,16 @@ class PostController extends Controller
                     $categoryIds[] = $category->id;
                 }
             }
-            $post->categories()->sync($categoryIds);
+            $post->categories()->sync($categoryIds);  // Sync categories to post
         }
     }
 
+    /**
+     * Attach tags to the post.
+     *
+     * @param Post $post
+     * @param array $tags
+     */
     private function attachTags(Post $post, $tags)
     {
         if (!empty($tags)) {
@@ -213,10 +218,9 @@ class PostController extends Controller
                     $tagIds[] = $tag->id;
                 }
             }
-            $post->tags()->sync($tagIds);
+            $post->tags()->sync($tagIds);  // Sync tags to post
         }
     }
-
 
     /**
      * Add meta data to the post.
@@ -229,13 +233,13 @@ class PostController extends Controller
         PostMeta::create([
             'post_id' => $post->id,
             'meta_key' => 'meta_title',
-            'meta_value' => $postData['title'],
+            'meta_value' => strip_tags($postData['title']),  // Ensure meta title is plain text
         ]);
 
         PostMeta::create([
             'post_id' => $post->id,
             'meta_key' => 'meta_description',
-            'meta_value' => substr(strip_tags($postData['content']), 0, 150),
+            'meta_value' => substr(strip_tags($postData['content']), 0, 150),  // Ensure meta description is plain text
         ]);
     }
 }

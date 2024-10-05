@@ -19,6 +19,9 @@ class OpenAIService
         $this->apiKey = env('OPENAI_API_KEY');
     }
 
+    /**
+     * Generate blog post data from OpenAI API
+     */
     public function generatePostData($title, $motto = '')
     {
         $attempts = 0;
@@ -28,6 +31,7 @@ class OpenAIService
             try {
                 Log::info("Starting OpenAI request for title: {$title}, attempt: " . ($attempts + 1));
 
+                // Request to OpenAI API for generating the post content
                 $response = $this->client->post('https://api.openai.com/v1/chat/completions', [
                     'headers' => [
                         'Authorization' => 'Bearer ' . $this->apiKey,
@@ -38,11 +42,11 @@ class OpenAIService
                         'messages'    => [
                             [
                                 'role'    => 'system',
-                                'content' => 'You are a helpful assistant that generates well-structured, SEO-optimized blog posts. The content should be clean, without <html> or <body> tags, and organized using <h1>, <h2>, and <p> tags. Avoid generating text in images.'
+                                'content' => 'You are a helpful assistant that generates well-structured, SEO-optimized blog posts. The content should be clean, without <html> or <body> tags, and organized using <h1>, <h2>, and <p> tags. Avoid generating text in images. Provide categories, tags, meta title, and meta description as plain text.'
                             ],
                             [
                                 'role'    => 'user',
-                                'content' => "Generate a detailed blog post for the title: '$title'. Structure the post with clear <h1>, <h2>, and <p> tags. Ensure the post has categories, tags, and post content."
+                                'content' => "Generate a detailed blog post for the title: '$title'. Structure the post with clear <h1>, <h2>, and <p> tags. Ensure the post has categories, tags, meta title, meta description, and post content."
                             ],
                         ],
                         'max_tokens'  => 1500, // Adjust token limit for larger responses
@@ -60,11 +64,12 @@ class OpenAIService
                     throw new Exception("OpenAI API did not return valid content: " . json_encode($body));
                 }
 
+                // Sanitize and parse the content
                 $content = $body['choices'][0]['message']['content'];
                 $sanitizedContent = $this->sanitizeContent($content);
                 $postData = $this->parseResponse($sanitizedContent, $title);
 
-                // Generate the featured image without text
+                // Generate the featured image based on post content
                 $postData['featured_image_url'] = $this->generateImage($postData['title'], substr(strip_tags($postData['content']), 0, 150));
 
                 // Fallback Video URL (YouTube Link)
@@ -86,6 +91,9 @@ class OpenAIService
         }
     }
 
+    /**
+     * Sanitize the content to remove unwanted characters
+     */
     private function sanitizeContent($content)
     {
         $sanitizedContent = preg_replace('/\x00/', '', $content);
@@ -93,12 +101,17 @@ class OpenAIService
         return $sanitizedContent;
     }
 
+    /**
+     * Parse OpenAI API response to extract post data, categories, tags, meta title, and meta description
+     */
     public function parseResponse($response, $title)
     {
         $data = [
             'title'      => $title,
             'slug'       => Str::slug($title),
             'content'    => '',  // Initialize content
+            'meta_title' => '',
+            'meta_description' => '',
             'categories' => [],
             'tags'       => [],
         ];
@@ -112,10 +125,18 @@ class OpenAIService
 
             if (strpos($line, 'Slug:') !== false) {
                 $data['slug'] = Str::slug(trim(str_replace('Slug:', '', $line)));
+            } elseif (strpos($line, 'Meta Title:') !== false) {
+                // Ensure plain text meta title
+                $data['meta_title'] = strip_tags(trim(str_replace('Meta Title:', '', $line)));
+            } elseif (strpos($line, 'Meta Description:') !== false) {
+                // Ensure plain text meta description
+                $data['meta_description'] = strip_tags(trim(str_replace('Meta Description:', '', $line)));
             } elseif (strpos($line, 'Categories:') !== false) {
+                // Parse categories as plain text, separated by commas
                 $categories = str_replace('Categories:', '', $line);
                 $data['categories'] = array_map('trim', explode(',', $categories));
             } elseif (strpos($line, 'Tags:') !== false) {
+                // Parse tags as plain text, separated by commas
                 $tags = str_replace('Tags:', '', $line);
                 $data['tags'] = array_map('trim', explode(',', $tags));
             } elseif (strpos($line, 'Post Content:') !== false) {
@@ -138,7 +159,9 @@ class OpenAIService
         return $data;
     }
 
-
+    /**
+     * Generate a featured image for the post based on its content
+     */
     public function generateImage($title, $contentSummary)
     {
         try {
@@ -181,12 +204,18 @@ class OpenAIService
         }
     }
 
+    /**
+     * Generate a placeholder image if OpenAI image generation fails
+     */
     private function generatePlaceholderImage($title)
     {
         $text = Str::limit(strip_tags($title), 30);
         return 'https://via.placeholder.com/1024x1024.png?text=' . urlencode($text);
     }
 
+    /**
+     * Generate a fallback video link or embed
+     */
     public function generateVideo($content)
     {
         try {
