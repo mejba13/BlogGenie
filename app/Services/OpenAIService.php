@@ -45,7 +45,7 @@ class OpenAIService
                                 'content' => "Generate a detailed blog post for the title: '$title'. Structure the post with clear <h1>, <h2>, and <p> tags. The content should be well-written, informative, and divided into relevant sections. Ensure there is a slug, categories, tags, and post content. The post content should be plain text without a wrapping 'post-container' class."
                             ],
                         ],
-                        'max_tokens'  => 200, // You can adjust the token limit based on your needs
+                        'max_tokens'  => 1500, // You can adjust the token limit based on your needs
                         'temperature' => 0.7,
                     ],
                     'timeout' => 600,
