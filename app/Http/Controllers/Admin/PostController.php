@@ -149,12 +149,15 @@ class PostController extends Controller
      */
     public function show($id)
     {
-        // Cache individual post for 1 hour
-        $post = Cache::remember("post.$id", 3600, function () use ($id) {
-            return Post::with('categories', 'tags', 'meta')->findOrFail($id);
-        });
+        // Retrieve the post along with meta information
+        $post = Post::with('categories', 'tags', 'meta')->findOrFail($id);
 
-        return view('admin.posts.show', compact('post'));
+        // Extract meta title and description (adjust as needed)
+        $metaTitle = $post->meta()->where('meta_key', 'meta_title')->value('meta_value') ?? $post->title; // Fallback to post title if no meta title
+        $metaDescription = $post->meta()->where('meta_key', 'meta_description')->value('meta_value') ?? substr(strip_tags($post->content), 0, 150);
+
+        // Pass variables to the view
+        return view('admin.posts.show', compact('post', 'metaTitle', 'metaDescription'));
     }
 
     /**
