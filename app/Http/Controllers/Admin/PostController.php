@@ -72,14 +72,14 @@ class PostController extends Controller
             // Step 6: Clear Cache
             Cache::forget('posts.all');
 
-            return redirect()->route('admin.posts.create')->with('success', 'Post created successfully.');
+            return redirect()->route('admin.posts.index')->with('success', 'Post created successfully.');
 
         } catch (Exception $e) {
             Log::error('Post creation failed: ' . $e->getMessage());
-
             return redirect()->route('admin.posts.create')->withErrors('Failed to create post: ' . $e->getMessage());
         }
     }
+
 
     /**
      * Edit post form.
@@ -97,7 +97,6 @@ class PostController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Validate the incoming request
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -188,8 +187,9 @@ class PostController extends Controller
                 $categoryName = trim($categoryName);
                 if (!empty($categoryName)) {
                     $category = Category::firstOrCreate([
-                        'name' => $categoryName,
                         'slug' => Str::slug($categoryName),
+                    ], [
+                        'name' => $categoryName,
                     ]);
                     $categoryIds[] = $category->id;
                 }
@@ -198,12 +198,6 @@ class PostController extends Controller
         }
     }
 
-    /**
-     * Attach tags to the post.
-     *
-     * @param Post $post
-     * @param array $tags
-     */
     private function attachTags(Post $post, $tags)
     {
         if (!empty($tags)) {
@@ -212,8 +206,9 @@ class PostController extends Controller
                 $tagName = trim($tagName);
                 if (!empty($tagName)) {
                     $tag = Tag::firstOrCreate([
-                        'name' => $tagName,
                         'slug' => Str::slug($tagName),
+                    ], [
+                        'name' => $tagName,
                     ]);
                     $tagIds[] = $tag->id;
                 }
@@ -221,6 +216,7 @@ class PostController extends Controller
             $post->tags()->sync($tagIds);
         }
     }
+
 
     /**
      * Add meta data to the post.

@@ -93,7 +93,7 @@ class OpenAIService
         return $sanitizedContent;
     }
 
-    private function parseResponse($response, $title)
+    public function parseResponse($response, $title)
     {
         $data = [
             'title'      => $title,
@@ -123,6 +123,7 @@ class OpenAIService
                 continue;
             }
 
+            // Gather the post content under Post Content section
             if ($isContent) {
                 $data['content'] .= "<p>" . htmlspecialchars($line) . "</p>";
             }
@@ -136,6 +137,7 @@ class OpenAIService
         Log::info("Parsed post data: " . json_encode($data));
         return $data;
     }
+
 
     public function generateImage($title, $contentSummary)
     {
