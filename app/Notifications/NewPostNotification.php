@@ -33,7 +33,7 @@ class NewPostNotification extends Notification implements ShouldQueue
                 [
                     'title' => $this->post->title,
                     'description' => Str::limit(strip_tags($this->post->content), 200),
-                    'url' => route('posts.show', $this->post->id),
+                    'url' => route('admin.posts.show', $this->post->id),
                     'footer' => [
                         'text' => 'New post by ' . $this->post->user->name,
                     ],

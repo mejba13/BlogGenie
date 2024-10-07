@@ -51,8 +51,7 @@
 
                     <!-- Display the post's tags -->
                     <div class="mb-4">
-                        <p><strong>Tags:</strong></p>
-                        <div class="flex flex-wrap gap-2">
+                        <strong>Tags:</strong>
                             @if($post->tags->isEmpty())
                                 <span class="text-gray-500">No tags assigned</span>
                             @else
@@ -62,7 +61,6 @@
                                     </a>
                                 @endforeach
                             @endif
-                        </div>
                     </div>
 
                     <!-- Display the post's content -->

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use GuzzleHttp\Client;
@@ -18,9 +19,13 @@ class OpenAIService
         $this->apiKey = env('OPENAI_API_KEY');
     }
 
+    /**
+     * Generate blog post data from OpenAI API
+     */
     public function generatePostData($title, $motto = '')
     {
         try {
+            // Request content generation from OpenAI API
             $response = $this->client->post('https://api.openai.com/v1/chat/completions', [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $this->apiKey,
@@ -38,14 +43,14 @@ class OpenAIService
                             'content' => "Generate a detailed blog post for the title: '$title'. Include a slug, post content, categories, tags, a featured image, and a video URL."
                         ],
                     ],
-                    'max_tokens'  => 200,
+                    'max_tokens'  => 200, // Increased token limit for more detailed posts
                     'temperature' => 0.7,
                 ],
                 'timeout' => 600,
             ]);
 
+            // Parse the response
             $body = json_decode($response->getBody()->getContents(), true);
-
             Log::info("OpenAI API response: " . json_encode($body));
 
             if (!isset($body['choices'][0]['message']['content'])) {
@@ -56,8 +61,9 @@ class OpenAIService
             $content = $body['choices'][0]['message']['content'];
             $postData = $this->parseResponse($content, $title);
 
-            // Generate featured image with title and motto
-            $postData['featured_image_url'] = $this->generateImage($postData['title'], $motto);
+            // Generate a featured image based on post content
+            $postData['featured_image_url'] = $this->generateImage($postData['content']);
+            // Generate a video URL based on post content
             $postData['video_url'] = $this->generateVideo($postData['content']);
 
             return $postData;
@@ -68,6 +74,9 @@ class OpenAIService
         }
     }
 
+    /**
+     * Parse OpenAI response to extract post data like content, categories, tags, and slug
+     */
     private function parseResponse($response, $title)
     {
         $data = [
@@ -88,14 +97,15 @@ class OpenAIService
                 $data['slug'] = Str::slug(trim(str_replace('Slug:', '', $line)));
             } elseif (strpos($line, 'Categories:') !== false) {
                 $categories = str_replace('Categories:', '', $line);
+                // Remove asterisks (*) and trim spaces
                 $data['categories'] = array_map(function ($category) {
-                    return str_replace('*', '', trim($category));
+                    return trim(str_replace('*', '', $category));
                 }, explode(',', $categories));
             } elseif (strpos($line, 'Tags:') !== false) {
                 $tags = str_replace('Tags:', '', $line);
-                // Clean tags by removing asterisks and trimming spaces
+                // Remove asterisks (*) and trim spaces
                 $data['tags'] = array_map(function ($tag) {
-                    return str_replace('*', '', trim($tag));
+                    return trim(str_replace('*', '', $tag));
                 }, explode(',', $tags));
             } elseif (strpos($line, 'Post Content:') !== false) {
                 $isContent = true;
@@ -116,11 +126,16 @@ class OpenAIService
         return $data;
     }
 
-    public function generateImage($title, $motto)
+    /**
+     * Generate a featured image based on the post content.
+     */
+    public function generateImage($postContent)
     {
         try {
-            $prompt = Str::limit(strip_tags($title), 1000);
+            // Prompt for image generation based on post content
+            $prompt = "Create a professional and visually appealing blog post featured image based on the following content: '$postContent'. The image should be clean, modern, and aesthetically pleasing. Avoid using any text on the image.";
 
+            // Request image generation from OpenAI API
             $response = $this->client->post('https://api.openai.com/v1/images/generations', [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $this->apiKey,
@@ -134,6 +149,7 @@ class OpenAIService
                 'timeout' => 300,
             ]);
 
+            // Process the image generation response
             $body = json_decode($response->getBody()->getContents(), true);
 
             if (isset($body['data'][0]['url'])) {
@@ -146,8 +162,6 @@ class OpenAIService
                 }
                 File::put(public_path($imageName), $imageContents);
 
-                // Add title motto text to image
-                $this->addTextToImage(public_path($imageName), $title, $motto);
                 return $imageName;
 
             } else {
@@ -156,63 +170,21 @@ class OpenAIService
 
         } catch (Exception $e) {
             Log::error("Failed to generate image: " . $e->getMessage());
-            return $this->generatePlaceholderImage($title);
+            return $this->generatePlaceholderImage();
         }
     }
 
-    private function addTextToImage($imagePath, $title, $motto)
+    /**
+     * Generate a placeholder image if OpenAI image generation fails.
+     */
+    private function generatePlaceholderImage()
     {
-        try {
-            $image = new \Imagick($imagePath);
-            $draw = new \ImagickDraw();
-
-            // Set text color to black for better contrast
-            $draw->setFillColor(new \ImagickPixel('black'));
-
-            // Define the font path
-            $fontPath = public_path('fonts/Roboto-Bold.ttf');
-            if (!file_exists($fontPath)) {
-                Log::error("Font not found at $fontPath");
-                throw new Exception("Font not found.");
-            }
-            $draw->setFont($fontPath);
-
-            // Set font size for the title
-            $draw->setFontSize(50);
-
-            // Set Gravity to top center for the title
-            $draw->setGravity(\Imagick::GRAVITY_NORTH);
-
-            // Draw the title in the top center of the image
-            $image->annotateImage($draw, 0, 50, 0, Str::limit(strip_tags($title), 50));
-
-            // Change font size for the motto and set gravity to bottom center
-            $draw->setFontSize(30);
-            $draw->setGravity(\Imagick::GRAVITY_SOUTH);
-
-            // Draw the motto at the bottom of the image
-            $image->annotateImage($draw, 0, 50, 0, Str::limit(strip_tags($motto), 100));
-
-            // Write the image to disk
-            $image->writeImage($imagePath);
-
-            // Clear Imagick object resources
-            $image->clear();
-            $image->destroy();
-
-            Log::info("Text and motto added to image successfully");
-
-        } catch (Exception $e) {
-            Log::error("Failed to add text to image: " . $e->getMessage());
-        }
+        return 'https://via.placeholder.com/1024x1024.png?text=Placeholder';
     }
 
-    private function generatePlaceholderImage($title)
-    {
-        $text = Str::limit(strip_tags($title), 30);
-        return 'https://via.placeholder.com/1024x1024.png?text=' . urlencode($text);
-    }
-
+    /**
+     * Generate a fallback video URL or embed link based on the post content.
+     */
     public function generateVideo($content)
     {
         try {
@@ -232,7 +204,7 @@ class OpenAIService
 
         } catch (Exception $e) {
             Log::error("Failed to generate the video: " . $e->getMessage());
-            return 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=819';
+            return 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=819'; // Fallback video
         }
     }
 }
