@@ -9,7 +9,6 @@ class TagSeeder extends Seeder
 {
     public function run(): void
     {
-        // Ensure only 10 tags are created
         Tag::factory()->count(10)->create();
     }
 }

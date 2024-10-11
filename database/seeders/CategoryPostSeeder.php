@@ -10,6 +10,7 @@ class CategoryPostSeeder extends Seeder
 {
     public function run(): void
     {
+        // Get all posts
         $posts = Post::all();
 
         // Attach 1 to 3 random categories to each post

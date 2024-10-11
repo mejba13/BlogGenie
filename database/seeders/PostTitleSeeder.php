@@ -2,19 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\PostTitle;
 use Illuminate\Database\Seeder;
+use App\Models\PostTitle;
 
 class PostTitleSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
-    public function run()
+    public function run(): void
     {
-        // Generate 10 sample PostTitles using the factory
         PostTitle::factory()->count(10)->create();
     }
 }

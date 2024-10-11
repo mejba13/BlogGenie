@@ -6,20 +6,19 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
+        // Call each individual seeder
         $this->call([
-            UserSeeder::class,  // Seed 10 users
-            PostSeeder::class,  // Seed 10 posts
-            CategorySeeder::class,  // Seed 10 categories
-            TagSeeder::class,  // Seed 10 tags
-            PostTagSeeder::class,  // Assign tags to posts
-            PostMetaSeeder::class,  // Seed 10 post meta
-            CommentSeeder::class,  // Seed 10 comments
-            CategoryPostSeeder::class,  // Assign categories to posts
+            UserSeeder::class,          // Seeder for users
+            CategorySeeder::class,      // Seeder for categories
+            PostTitleSeeder::class,
+            PostSeeder::class,          // Seeder for posts
+            TagSeeder::class,           // Seeder for tags
+            CommentSeeder::class,       // Seeder for comments
+            PostMetaSeeder::class,      // Seeder for post meta
+            CategoryPostSeeder::class,  // Seeder for post-category pivot table
+            PostTagSeeder::class,       // Seeder for post-tag pivot table
         ]);
     }
 }

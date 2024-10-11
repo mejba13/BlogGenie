@@ -2,24 +2,21 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
 use App\Models\Post;
 use App\Models\Tag;
-use Illuminate\Database\Seeder;
 
 class PostTagSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create 10 posts and 5 tags
-        $posts = Post::factory(10)->create();
-        $tags = Tag::factory(5)->create();
+        // Get all posts
+        $posts = Post::all();
 
-        // Attach tags to posts in the pivot table
-        $posts->each(function ($post) use ($tags) {
-            // Attach between 1 to 3 random tags to each post
-            $post->tags()->attach(
-                $tags->random(rand(1, 3))->pluck('id')->toArray()
-            );
+        // Attach 1 to 3 random tags to each post
+        $posts->each(function ($post) {
+            $tags = Tag::inRandomOrder()->take(rand(1, 3))->pluck('id');
+            $post->tags()->attach($tags);
         });
     }
 }

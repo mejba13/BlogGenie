@@ -2,23 +2,21 @@
 
 namespace Database\Factories;
 
+use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
-use App\Models\Category;
 
 class CategoryFactory extends Factory
 {
     protected $model = Category::class;
 
-    public function definition(): array
+    public function definition()
     {
-        $name = $this->faker->unique()->words(2, true); // Generates a random two-word name
+        $name = $this->faker->unique()->word;
         return [
-            'name' => ucfirst($name),
+            'name' => $name,
             'slug' => Str::slug($name),
-            'description' => $this->faker->sentence(),  // Generates a random description
-            'created_at' => now(),
-            'updated_at' => now(),
+            'description' => $this->faker->sentence,
         ];
     }
 }
