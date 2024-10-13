@@ -2,14 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Post;
+use Illuminate\Database\Seeder;
 
 class PostSeeder extends Seeder
 {
     public function run(): void
     {
-        // Ensure only 10 posts are created
-        Post::factory()->count(10)->create();
+        Post::factory()->count(10)->create();  // Ensures only 10 posts are created
     }
 }

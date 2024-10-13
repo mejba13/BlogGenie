@@ -8,17 +8,17 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Call each individual seeder
+        // Ensure that each table gets only 10 rows of data
         $this->call([
-            UserSeeder::class,          // Seeder for users
-            CategorySeeder::class,      // Seeder for categories
-            PostTitleSeeder::class,
-            PostSeeder::class,          // Seeder for posts
-            TagSeeder::class,           // Seeder for tags
-            CommentSeeder::class,       // Seeder for comments
-            PostMetaSeeder::class,      // Seeder for post meta
-            CategoryPostSeeder::class,  // Seeder for post-category pivot table
-            PostTagSeeder::class,       // Seeder for post-tag pivot table
+            UserSeeder::class,       // 10 users
+            CategorySeeder::class,   // 10 categories
+            PostSeeder::class,       // 10 posts
+            TagSeeder::class,        // 10 tags
+            PostTagSeeder::class,    // 10 tags associated with posts
+            CategoryPostSeeder::class, // 10 categories associated with posts
+            CommentSeeder::class,    // 10 comments
+            PostMetaSeeder::class,   // 10 post meta entries
+            PostTitleSeeder::class,  // 10 post titles
         ]);
     }
 }
